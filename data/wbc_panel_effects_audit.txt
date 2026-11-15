@@ -1,0 +1,46 @@
+=================================================================
+AUDIT ANALISIS PANEL WBC
+=================================================================
+Observasi: 380
+Wilayah: 38
+Bulan: 10
+
+METODE:
+Ranking Spearman
+Two-way demeaning
+Kontrol efek wilayah
+Kontrol efek bulan
+
+CATATAN:
+Analisis bersifat eksploratif.
+Korelasi tidak membuktikan kausalitas.
+Tidak menggunakan p-value inferensial.
+Periode observasi hanya Januari-Oktober 2026.
+
+HASIL PANEL:
+   ANALYSIS              WEATHER          TARGET   N  REGIONS  MONTHS  CORRELATION
+ SAME_MONTH             T2M_MEAN WBC_AFFECTED_HA 380       38      10     0.054784
+ SAME_MONTH             T2M_MEAN     WBC_PUSO_HA 380       38      10     0.077577
+ SAME_MONTH              T2M_MAX WBC_AFFECTED_HA 380       38      10    -0.143450
+ SAME_MONTH              T2M_MAX     WBC_PUSO_HA 380       38      10     0.016739
+ SAME_MONTH              T2M_MIN WBC_AFFECTED_HA 380       38      10    -0.066426
+ SAME_MONTH              T2M_MIN     WBC_PUSO_HA 380       38      10     0.036504
+ SAME_MONTH            RH2M_MEAN WBC_AFFECTED_HA 380       38      10    -0.086548
+ SAME_MONTH            RH2M_MEAN     WBC_PUSO_HA 380       38      10    -0.079377
+ SAME_MONTH      PRECTOTCORR_SUM WBC_AFFECTED_HA 380       38      10    -0.101201
+ SAME_MONTH      PRECTOTCORR_SUM     WBC_PUSO_HA 380       38      10     0.040867
+LAG_1_MONTH        T2M_MEAN_LAG1 WBC_AFFECTED_HA 342       38       9     0.152177
+LAG_1_MONTH        T2M_MEAN_LAG1     WBC_PUSO_HA 342       38       9     0.117262
+LAG_1_MONTH         T2M_MAX_LAG1 WBC_AFFECTED_HA 342       38       9    -0.068290
+LAG_1_MONTH         T2M_MAX_LAG1     WBC_PUSO_HA 342       38       9     0.017186
+LAG_1_MONTH         T2M_MIN_LAG1 WBC_AFFECTED_HA 342       38       9     0.061870
+LAG_1_MONTH         T2M_MIN_LAG1     WBC_PUSO_HA 342       38       9    -0.028597
+LAG_1_MONTH       RH2M_MEAN_LAG1 WBC_AFFECTED_HA 342       38       9    -0.010427
+LAG_1_MONTH       RH2M_MEAN_LAG1     WBC_PUSO_HA 342       38       9    -0.076036
+LAG_1_MONTH PRECTOTCORR_SUM_LAG1 WBC_AFFECTED_HA 342       38       9    -0.066705
+LAG_1_MONTH PRECTOTCORR_SUM_LAG1     WBC_PUSO_HA 342       38       9    -0.019620
+
+FILE OUTPUT:
+C:\PestCycleAI_Web_Integrated\data\wbc_panel_effects_2026.csv
+C:\PestCycleAI_Web_Integrated\data\wbc_monthly_trends_2026.csv
+=================================================================

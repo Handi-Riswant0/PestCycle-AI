@@ -1,0 +1,65 @@
+=================================================================
+AUDIT AGREGASI NASA POWER PESTCYCLE AI
+=================================================================
+Periode: 2020-01-01 sampai 2025-12-31
+Jumlah wilayah: 38
+Jumlah hari: 2192
+Jumlah baris: 83296
+Jumlah variabel: 5
+
+VARIABEL:
+T2M
+T2M_MAX
+T2M_MIN
+RH2M
+PRECTOTCORR
+
+VALIDASI:
+Tanggal unik: 2192
+Wilayah unik: 38
+Duplikasi: 0
+Nilai kosong: 0
+
+JUMLAH DATA PER WILAYAH:
+Bangkalan: 2192 hari
+Banyuwangi: 2192 hari
+Blitar: 2192 hari
+Bojonegoro: 2192 hari
+Bondowoso: 2192 hari
+Gresik: 2192 hari
+Jember: 2192 hari
+Jombang: 2192 hari
+Kediri: 2192 hari
+Kota Batu: 2192 hari
+Kota Blitar: 2192 hari
+Kota Kediri: 2192 hari
+Kota Madiun: 2192 hari
+Kota Malang: 2192 hari
+Kota Mojokerto: 2192 hari
+Kota Pasuruan: 2192 hari
+Kota Probolinggo: 2192 hari
+Kota Surabaya: 2192 hari
+Lamongan: 2192 hari
+Lumajang: 2192 hari
+Madiun: 2192 hari
+Magetan: 2192 hari
+Malang: 2192 hari
+Mojokerto: 2192 hari
+Nganjuk: 2192 hari
+Ngawi: 2192 hari
+Pacitan: 2192 hari
+Pamekasan: 2192 hari
+Pasuruan: 2192 hari
+Ponorogo: 2192 hari
+Probolinggo: 2192 hari
+Sampang: 2192 hari
+Sidoarjo: 2192 hari
+Situbondo: 2192 hari
+Sumenep: 2192 hari
+Trenggalek: 2192 hari
+Tuban: 2192 hari
+Tulungagung: 2192 hari
+
+=================================================================
+AGREGASI SELESAI
+=================================================================

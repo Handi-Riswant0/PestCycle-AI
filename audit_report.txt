@@ -1,0 +1,139 @@
+===========================================================================
+AUDIT DATA PESTCYCLE AI
+===========================================================================
+Folder data: C:\PestCycleAI_Web_Integrated\data
+
+===========================================================================
+FILE: nasa_power_2020_2025_grid.csv
+===========================================================================
+Jumlah baris       : 52,608
+Jumlah kolom       : 10
+Jumlah duplikat    : 0
+Ukuran file        : 3.04 MB
+
+DAFTAR KOLOM:
+- DATE (object)
+- LAT (float64)
+- LON (float64)
+- YEAR (int64)
+- DOY (int64)
+- T2M (float64)
+- T2M_MAX (float64)
+- T2M_MIN (float64)
+- RH2M (float64)
+- PRECTOTCORR (float64)
+
+DATA KOSONG:
+Tidak ditemukan data kosong.
+
+KANDUNGAN DATA UNIK:
+- LAT: [-8.5, -8.0, -7.5, -7.0]
+- LON: [111.25, 111.875, 112.5, 113.125, 113.75, 114.375]
+- YEAR: [2020, 2021, 2022, 2023, 2024, 2025]
+
+PEMERIKSAAN TANGGAL:
+- DATE: 2020-01-01 00:00:00 sampai 2025-12-31 00:00:00
+
+CONTOH 5 BARIS DATA:
+      DATE  LAT     LON  YEAR  DOY   T2M  T2M_MAX  T2M_MIN  RH2M  PRECTOTCORR
+2020-01-01 -8.5 111.250  2020    1 27.04    27.59    26.56 85.87        26.36
+2020-01-01 -8.5 111.875  2020    1 27.39    28.87    26.66 85.31        29.94
+2020-01-01 -8.5 112.500  2020    1 27.44    29.17    26.46 82.62        41.56
+2020-01-01 -8.5 113.125  2020    1 28.34    29.52    27.42 78.24        24.20
+2020-01-01 -8.5 113.750  2020    1 27.96    29.46    26.81 78.38        27.64
+
+===========================================================================
+FILE: wbc_forecast_bbpt_2022_2025.csv
+===========================================================================
+Jumlah baris       : 153
+Jumlah kolom       : 13
+Jumlah duplikat    : 0
+Ukuran file        : 0.07 MB
+
+DAFTAR KOLOM:
+- provinsi (object)
+- kabupaten_kota (object)
+- periode_musim_tanam (object)
+- tahun_publikasi_sumber (int64)
+- jenis_data (object)
+- luas_prakiraan_serangan_wbc_ha (int64)
+- luas_kejadian_aktual_wbc_ha (float64)
+- tingkat_data (object)
+- instansi_sumber (object)
+- dokumen_sumber (object)
+- tabel_lampiran (object)
+- url_sumber (object)
+- catatan (object)
+
+DATA KOSONG:
+- luas_kejadian_aktual_wbc_ha: 152 (99.35%)
+
+KANDUNGAN DATA UNIK:
+- provinsi: ['Jawa Timur']
+- kabupaten_kota: ['Pacitan', 'Ponorogo', 'Trenggalek', 'Tulungagung', 'Blitar', 'Kediri', 'Malang', 'Lumajang', 'Jember', 'Banyuwangi', 'Bondowoso', 'Situbondo', 'Probolinggo', 'Pasuruan', 'Sidoarjo', 'Mojokerto', 'Jombang', 'Nganjuk', 'Madiun', 'Magetan', 'Ngawi', 'Bojonegoro', 'Tuban', 'Lamongan', 'Gresik', 'Bangkalan', 'Sampang', 'Pamekasan', 'Sumenep', 'Kota Kediri', 'Kota Blitar', 'Kota Malang', 'Kota Probolinggo', 'Kota Pasuruan', 'Kota Mojokerto', 'Kota Madiun', 'Kota Surabaya', 'Kota Batu', 'Jawa Timur (agregat provinsi)']
+- periode_musim_tanam: ['MT 2022', 'MT 2023', 'MT 2023/2024', 'MT 2024/2025', 'MT 2025']
+- tahun_publikasi_sumber: [2022, 2023, 2024, 2025]
+- jenis_data: ['Prakiraan serangan', 'Evaluasi kejadian aktual terhadap prakiraan']
+- luas_kejadian_aktual_wbc_ha: [796.83]
+- tingkat_data: ['Kabupaten/Kota', 'Provinsi']
+- instansi_sumber: ['BBPOPT, Direktorat Jenderal Tanaman Pangan, Kementerian Pertanian', 'BBPOPT / Direktorat Pelindungan Tanaman Pangan, Kementerian Pertanian']
+- dokumen_sumber: ['Buku Prakiraan Serangan OPT Utama Padi, Jagung, dan Kedelai MT 2022', 'Buku Prakiraan Serangan OPT Utama Padi, Jagung, Kedelai, dan Akabi MT 2023', 'Buku Prakiraan Serangan OPT Utama Pangan MT 2023/2024', 'Buku Prakiraan Serangan OPT Utama Pangan MT 2024/2025', 'Buku Prakiraan Serangan OPT Utama Pangan MT 2025/2026']
+- tabel_lampiran: ['Lampiran 43, Prakiraan serangan OPT padi MT 2022 Provinsi Jawa Timur', 'Lampiran 57, Prakiraan serangan OPT padi MT 2023 Provinsi Jawa Timur', 'Lampiran 57, Prakiraan serangan OPT padi MT 2023/2024 Provinsi Jawa Timur', 'Lampiran 57, Prakiraan serangan OPT padi MT 2024/2025 Provinsi Jawa Timur', 'Tabel 3, Evaluasi prakiraan serangan wereng batang cokelat pada padi MT 2025']
+- url_sumber: ['https://bdsp2.pertanian.go.id/siperditan/rekomenpdf/opttp/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202022.pdf', 'https://ppid.pertanian.go.id/pemberitahuan_attachment/15/14444/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202023%20-cetak.pdf', 'https://bdsp2.pertanian.go.id/siperditan/rekomenpdf/opttp/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202023-2024.pdf', 'https://bdsp2.pertanian.go.id/siperditan/rekomenpdf/iklimmusim/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202024-2025%20FINAL.pdf', 'https://siperditan.pertanian.go.id/rekomenpdf/opttp/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202025-2026.pdf']
+- catatan: ['Angka prakiraan per kabupaten/kota; bukan laporan kejadian aktual rutin UPT.', "Sumber tabel menuliskan 'Ngajuk'; dinormalisasi menjadi Nganjuk. Angka prakiraan, bukan kejadian aktual.", 'Angka tingkat provinsi, bukan data per kabupaten. Sumber data Direktorat Pelindungan Tanaman Pangan per 17 September 2025.']
+
+PEMERIKSAAN TANGGAL:
+- tahun_publikasi_sumber: 1970-01-01 00:00:00.000002022 sampai 1970-01-01 00:00:00.000002025
+
+CONTOH 5 BARIS DATA:
+  provinsi kabupaten_kota periode_musim_tanam  tahun_publikasi_sumber         jenis_data  luas_prakiraan_serangan_wbc_ha  luas_kejadian_aktual_wbc_ha   tingkat_data                                                   instansi_sumber                                                      dokumen_sumber                                                       tabel_lampiran                                                                                                url_sumber                                                                      catatan
+Jawa Timur        Pacitan             MT 2022                    2022 Prakiraan serangan                               9                          NaN Kabupaten/Kota BBPOPT, Direktorat Jenderal Tanaman Pangan, Kementerian Pertanian Buku Prakiraan Serangan OPT Utama Padi, Jagung, dan Kedelai MT 2022 Lampiran 43, Prakiraan serangan OPT padi MT 2022 Provinsi Jawa Timur https://bdsp2.pertanian.go.id/siperditan/rekomenpdf/opttp/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202022.pdf Angka prakiraan per kabupaten/kota; bukan laporan kejadian aktual rutin UPT.
+Jawa Timur       Ponorogo             MT 2022                    2022 Prakiraan serangan                             114                          NaN Kabupaten/Kota BBPOPT, Direktorat Jenderal Tanaman Pangan, Kementerian Pertanian Buku Prakiraan Serangan OPT Utama Padi, Jagung, dan Kedelai MT 2022 Lampiran 43, Prakiraan serangan OPT padi MT 2022 Provinsi Jawa Timur https://bdsp2.pertanian.go.id/siperditan/rekomenpdf/opttp/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202022.pdf Angka prakiraan per kabupaten/kota; bukan laporan kejadian aktual rutin UPT.
+Jawa Timur     Trenggalek             MT 2022                    2022 Prakiraan serangan                             125                          NaN Kabupaten/Kota BBPOPT, Direktorat Jenderal Tanaman Pangan, Kementerian Pertanian Buku Prakiraan Serangan OPT Utama Padi, Jagung, dan Kedelai MT 2022 Lampiran 43, Prakiraan serangan OPT padi MT 2022 Provinsi Jawa Timur https://bdsp2.pertanian.go.id/siperditan/rekomenpdf/opttp/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202022.pdf Angka prakiraan per kabupaten/kota; bukan laporan kejadian aktual rutin UPT.
+Jawa Timur    Tulungagung             MT 2022                    2022 Prakiraan serangan                              14                          NaN Kabupaten/Kota BBPOPT, Direktorat Jenderal Tanaman Pangan, Kementerian Pertanian Buku Prakiraan Serangan OPT Utama Padi, Jagung, dan Kedelai MT 2022 Lampiran 43, Prakiraan serangan OPT padi MT 2022 Provinsi Jawa Timur https://bdsp2.pertanian.go.id/siperditan/rekomenpdf/opttp/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202022.pdf Angka prakiraan per kabupaten/kota; bukan laporan kejadian aktual rutin UPT.
+Jawa Timur         Blitar             MT 2022                    2022 Prakiraan serangan                              12                          NaN Kabupaten/Kota BBPOPT, Direktorat Jenderal Tanaman Pangan, Kementerian Pertanian Buku Prakiraan Serangan OPT Utama Padi, Jagung, dan Kedelai MT 2022 Lampiran 43, Prakiraan serangan OPT padi MT 2022 Provinsi Jawa Timur https://bdsp2.pertanian.go.id/siperditan/rekomenpdf/opttp/BUKU%20PRAKIRAAN%20OPT%20PANGAN%20MT%202022.pdf Angka prakiraan per kabupaten/kota; bukan laporan kejadian aktual rutin UPT.
+
+===========================================================================
+FILE: wbc_siperdittan_2026.csv
+===========================================================================
+Jumlah baris       : 380
+Jumlah kolom       : 8
+Jumlah duplikat    : 0
+Ukuran file        : 0.02 MB
+
+DAFTAR KOLOM:
+- provinsi (object)
+- kabupaten_kota (object)
+- tahun (int64)
+- bulan_ke (int64)
+- bulan (object)
+- luas_terkena_T (float64)
+- luas_puso_P (float64)
+- source_FID (int64)
+
+DATA KOSONG:
+Tidak ditemukan data kosong.
+
+KANDUNGAN DATA UNIK:
+- provinsi: ['JAWA TIMUR']
+- kabupaten_kota: ['GRESIK', 'KOTA BATU', 'KOTA BLITAR', 'JEMBER', 'JOMBANG', 'KEDIRI', 'KOTA KEDIRI', 'KOTA MADIUN', 'KOTA MALANG', 'BANYUWANGI', 'BLITAR', 'BOJONEGORO', 'BONDOWOSO', 'BANGKALAN', 'KOTA MOJOKERTO', 'KOTA PASURUAN', 'KOTA SURABAYA', 'LAMONGAN', 'KOTA PROBOLINGGO', 'LUMAJANG', 'MADIUN', 'MAGETAN', 'MALANG', 'MOJOKERTO', 'NGANJUK', 'NGAWI', 'PACITAN', 'PAMEKASAN', 'PASURUAN', 'PONOROGO', 'PROBOLINGGO', 'SAMPANG', 'SIDOARJO', 'SITUBONDO', 'SUMENEP', 'TRENGGALEK', 'TUBAN', 'TULUNGAGUNG']
+- tahun: [2026]
+- bulan_ke: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+- bulan: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober']
+- luas_puso_P: [0.0, 3.1, 1.2, 1.4, 0.5, 0.57, 1.6, 0.12, 0.01, 0.1, 0.06, 0.2, 0.14, 0.19, 1.0, 1.3, 0.11]
+- source_FID: [255, 262, 265, 272, 275, 280, 285, 287, 289, 304, 309, 318, 319, 339, 348, 349, 351, 368, 370, 422, 423, 425, 428, 432, 435, 436, 437, 438, 441, 445, 446, 453, 456, 458, 470, 478, 479, 480]
+
+PEMERIKSAAN TANGGAL:
+- tahun: 1970-01-01 00:00:00.000002026 sampai 1970-01-01 00:00:00.000002026
+
+CONTOH 5 BARIS DATA:
+  provinsi kabupaten_kota  tahun  bulan_ke    bulan  luas_terkena_T  luas_puso_P  source_FID
+JAWA TIMUR         GRESIK   2026         1  Januari             0.2          0.0         255
+JAWA TIMUR         GRESIK   2026         2 Februari             0.0          0.0         255
+JAWA TIMUR         GRESIK   2026         3    Maret             0.0          0.0         255
+JAWA TIMUR         GRESIK   2026         4    April             0.0          0.0         255
+JAWA TIMUR         GRESIK   2026         5      Mei             0.0          0.0         255
+
+===========================================================================
+AUDIT SELESAI
+===========================================================================

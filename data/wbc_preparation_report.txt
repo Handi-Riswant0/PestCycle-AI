@@ -1,0 +1,18 @@
+=================================================================
+LAPORAN PERSIAPAN DATA WBC
+=================================================================
+Wilayah referensi: 38
+BBPOPT kabupaten: 152
+BBPOPT prakiraan: 152
+BBPOPT evaluasi aktual: 0
+BBPOPT tingkat provinsi: 1
+SiPerDitTan: 380
+Wilayah SiPerDitTan: 38
+
+FILE OUTPUT:
+C:\PestCycleAI_Web_Integrated\data\wbc_bbopt_forecast_clean.csv
+C:\PestCycleAI_Web_Integrated\data\wbc_bbopt_actual_clean.csv
+C:\PestCycleAI_Web_Integrated\data\wbc_bbopt_province_separate.csv
+C:\PestCycleAI_Web_Integrated\data\wbc_siperdittan_2026_clean.csv
+
+Pemisahan data selesai.

@@ -1,0 +1,26 @@
+=================================================================
+AUDIT NASA POWER 2020-2026
+=================================================================
+Jumlah wilayah: 38
+Jumlah tanggal: 2496
+Jumlah baris: 94848
+Tanggal awal: 2020-01-01 00:00:00
+Tanggal akhir: 2026-10-31 00:00:00
+Jumlah variabel cuaca: 5
+Duplikasi: 0
+Nilai kosong: 0
+
+KELENGKAPAN DATA PER TAHUN:
+2020: 366 hari | 13908 baris
+2021: 365 hari | 13870 baris
+2022: 365 hari | 13870 baris
+2023: 365 hari | 13870 baris
+2024: 366 hari | 13908 baris
+2025: 365 hari | 13870 baris
+2026: 304 hari | 11552 baris
+
+KELENGKAPAN PER WILAYAH:
+Wilayah lengkap: 38
+
+STATUS: BERHASIL
+=================================================================

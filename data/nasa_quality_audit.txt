@@ -1,0 +1,60 @@
+=================================================================
+LAPORAN QUALITY CHECK NASA POWER
+=================================================================
+Total baris: 83296
+Total wilayah: 38
+Total tanggal: 2192
+Duplikasi: 0
+Nilai kosong: 0
+Ketidaksesuaian suhu: 0
+
+RENTANG VARIABEL:
+T2M: Min=20.5195, Max=32.0549, Invalid=0
+T2M_MAX: Min=24.0523, Max=40.5825, Invalid=0
+T2M_MIN: Min=16.0181, Max=29.3550, Invalid=0
+RH2M: Min=45.8000, Max=95.8348, Invalid=0
+PRECTOTCORR: Min=0.0000, Max=318.6800, Invalid=0
+
+KELENGKAPAN WILAYAH:
+Bangkalan: 2192 hari
+Banyuwangi: 2192 hari
+Blitar: 2192 hari
+Bojonegoro: 2192 hari
+Bondowoso: 2192 hari
+Gresik: 2192 hari
+Jember: 2192 hari
+Jombang: 2192 hari
+Kediri: 2192 hari
+Kota Batu: 2192 hari
+Kota Blitar: 2192 hari
+Kota Kediri: 2192 hari
+Kota Madiun: 2192 hari
+Kota Malang: 2192 hari
+Kota Mojokerto: 2192 hari
+Kota Pasuruan: 2192 hari
+Kota Probolinggo: 2192 hari
+Kota Surabaya: 2192 hari
+Lamongan: 2192 hari
+Lumajang: 2192 hari
+Madiun: 2192 hari
+Magetan: 2192 hari
+Malang: 2192 hari
+Mojokerto: 2192 hari
+Nganjuk: 2192 hari
+Ngawi: 2192 hari
+Pacitan: 2192 hari
+Pamekasan: 2192 hari
+Pasuruan: 2192 hari
+Ponorogo: 2192 hari
+Probolinggo: 2192 hari
+Sampang: 2192 hari
+Sidoarjo: 2192 hari
+Situbondo: 2192 hari
+Sumenep: 2192 hari
+Trenggalek: 2192 hari
+Tuban: 2192 hari
+Tulungagung: 2192 hari
+
+=================================================================
+QUALITY CHECK SELESAI
+=================================================================

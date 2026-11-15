@@ -1,0 +1,52 @@
+=================================================================
+LAPORAN SPATIAL WEIGHTING PESTCYCLE AI
+=================================================================
+Jumlah wilayah: 38
+Jumlah titik grid: 24
+Jumlah pasangan sel-wilayah: 102
+Wilayah berhasil dihitung: 38
+
+VALIDASI TOTAL BOBOT:
+
+Bangkalan: 2 sel | 100.00000000% | Luas: 1303208892.66 m2
+Banyuwangi: 4 sel | 100.00000000% | Luas: 3558006184.44 m2
+Blitar: 4 sel | 100.00000000% | Luas: 1745382822.39 m2
+Bojonegoro: 4 sel | 100.00000000% | Luas: 2312627214.06 m2
+Bondowoso: 2 sel | 100.00000000% | Luas: 1554991547.40 m2
+Gresik: 2 sel | 100.00000000% | Luas: 1063931863.02 m2
+Jember: 4 sel | 100.00000000% | Luas: 3314662372.85 m2
+Jombang: 3 sel | 100.00000000% | Luas: 1109835406.82 m2
+Kediri: 4 sel | 100.00000000% | Luas: 1523562933.01 m2
+Kota Batu: 2 sel | 100.00000000% | Luas: 194170111.30 m2
+Kota Blitar: 2 sel | 100.00000000% | Luas: 33203090.72 m2
+Kota Kediri: 1 sel | 100.00000000% | Luas: 67232226.71 m2
+Kota Madiun: 1 sel | 100.00000000% | Luas: 36126001.22 m2
+Kota Malang: 1 sel | 100.00000000% | Luas: 111076622.07 m2
+Kota Mojokerto: 1 sel | 100.00000000% | Luas: 20480266.79 m2
+Kota Pasuruan: 1 sel | 100.00000000% | Luas: 39124600.12 m2
+Kota Probolinggo: 2 sel | 100.00000000% | Luas: 55213444.96 m2
+Kota Surabaya: 4 sel | 100.00000000% | Luas: 338868348.67 m2
+Lamongan: 4 sel | 100.00000000% | Luas: 1753077623.48 m2
+Lumajang: 2 sel | 100.00000000% | Luas: 1795720855.68 m2
+Madiun: 4 sel | 100.00000000% | Luas: 1113627025.21 m2
+Magetan: 2 sel | 100.00000000% | Luas: 706443507.68 m2
+Malang: 4 sel | 100.00000000% | Luas: 3473787153.23 m2
+Mojokerto: 2 sel | 100.00000000% | Luas: 984380097.80 m2
+Nganjuk: 2 sel | 100.00000000% | Luas: 1289066828.50 m2
+Ngawi: 3 sel | 100.00000000% | Luas: 1395803563.07 m2
+Pacitan: 2 sel | 100.00000000% | Luas: 1385295689.92 m2
+Pamekasan: 3 sel | 100.00000000% | Luas: 796306417.45 m2
+Pasuruan: 4 sel | 100.00000000% | Luas: 1493650813.28 m2
+Ponorogo: 2 sel | 100.00000000% | Luas: 1418618116.46 m2
+Probolinggo: 4 sel | 100.00000000% | Luas: 1725304374.94 m2
+Sampang: 3 sel | 100.00000000% | Luas: 1229357610.51 m2
+Sidoarjo: 2 sel | 100.00000000% | Luas: 724743998.63 m2
+Situbondo: 4 sel | 100.00000000% | Luas: 1654714653.92 m2
+Sumenep: 3 sel | 100.00000000% | Luas: 1399250432.31 m2
+Trenggalek: 4 sel | 100.00000000% | Luas: 1249373398.85 m2
+Tuban: 2 sel | 100.00000000% | Luas: 1973344823.36 m2
+Tulungagung: 2 sel | 100.00000000% | Luas: 1144473748.22 m2
+
+=================================================================
+SPATIAL WEIGHTING SELESAI
+=================================================================
