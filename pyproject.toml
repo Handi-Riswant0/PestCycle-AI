@@ -1,7 +1,16 @@
+
 [project]
 name = "pestcycle-ai"
 version = "1.0.0"
 requires-python = "~=3.12.0"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "pandas==2.2.3",
+    "numpy",
+    "joblib",
+    "scikit-learn",
+]
 
 [tool.vercel]
 entrypoint = "backend.main:app"
