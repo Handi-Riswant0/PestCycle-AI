@@ -1,0 +1,49 @@
+======================================================================
+PESTCYCLE AI - MODEL TRAINING AUDIT
+======================================================================
+
+Jumlah TRAIN: 228
+Jumlah TEST: 114
+Jumlah wilayah: 38
+Jumlah fitur: 11
+
+FITUR:
+REGION_KEY
+MONTH_SIN
+MONTH_COS
+T2M_MEAN_LAG1
+T2M_MAX_LAG1
+T2M_MIN_LAG1
+RH2M_MEAN_LAG1
+PRECTOTCORR_SUM_LAG1
+WEATHER_DAYS_LAG1
+WBC_AFFECTED_HA_LAG1
+WBC_PUSO_HA_LAG1
+
+HASIL MODEL:
+WBC_AFFECTED_HA | DUMMY_BASELINE | MAE=1.921438 | RMSE=2.239968 | R2=-0.149400 | Nonzero MAE=2.156736411672534
+WBC_AFFECTED_HA | RANDOM_FOREST | MAE=3.309750 | RMSE=4.829399 | R2=-4.342861 | Nonzero MAE=4.750695351540955
+WBC_AFFECTED_HA | EXTRA_TREES | MAE=1.891216 | RMSE=3.014294 | R2=-1.081416 | Nonzero MAE=3.395568859656407
+WBC_AFFECTED_HA | GRADIENT_BOOSTING | MAE=2.226026 | RMSE=3.459734 | R2=-1.742035 | Nonzero MAE=3.740188765513274
+WBC_PUSO_HA | DUMMY_BASELINE | MAE=0.065104 | RMSE=0.316900 | R2=-0.002951 | Nonzero MAE=1.1726706672172764
+WBC_PUSO_HA | RANDOM_FOREST | MAE=0.063525 | RMSE=0.313064 | R2=0.021186 | Nonzero MAE=1.1270222437429307
+WBC_PUSO_HA | EXTRA_TREES | MAE=0.062722 | RMSE=0.312847 | R2=0.022539 | Nonzero MAE=1.110823621025708
+WBC_PUSO_HA | GRADIENT_BOOSTING | MAE=0.042018 | RMSE=0.319211 | R2=-0.017632 | Nonzero MAE=1.1975
+
+CATATAN METODOLOGI:
+- Model diuji menggunakan pembagian temporal.
+- Target diprediksi secara terpisah.
+- Transformasi log1p digunakan saat training.
+- Prediksi dikembalikan ke skala hektare.
+- Prediksi negatif dibatasi menjadi nol.
+- Test set tidak digunakan untuk fitting.
+- Hasil belum merupakan validasi lintas tahun.
+
+FILE OUTPUT:
+C:\PestCycleAI_Web_Integrated\data\wbc_model_comparison_2026.csv
+C:\PestCycleAI_Web_Integrated\data\wbc_model_predictions_2026.csv
+C:\PestCycleAI_Web_Integrated\models
+
+======================================================================
+MODEL TRAINING SELESAI
+======================================================================

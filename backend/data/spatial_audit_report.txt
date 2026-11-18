@@ -1,0 +1,91 @@
+=================================================================
+LAPORAN AUDIT SPASIAL PESTCYCLE AI
+=================================================================
+Jumlah baris NASA: 52608
+Jumlah titik grid: 24
+Jumlah poligon: 38
+Titik terpetakan: 14
+Titik tidak terpetakan: 10
+Titik dengan beberapa wilayah: 0
+Wilayah terwakili: 14
+Wilayah belum terwakili: 24
+
+JUMLAH TITIK GRID PER WILAYAH:
+Bangkalan: 1
+Banyuwangi: 1
+Blitar: 0
+Bojonegoro: 0
+Bondowoso: 1
+Gresik: 1
+Jember: 1
+Jombang: 0
+Kediri: 0
+Kota Batu: 0
+Kota Blitar: 0
+Kota Kediri: 0
+Kota Madiun: 0
+Kota Malang: 0
+Kota Mojokerto: 0
+Kota Pasuruan: 0
+Kota Probolinggo: 0
+Kota Surabaya: 0
+Lamongan: 0
+Lumajang: 1
+Madiun: 0
+Magetan: 0
+Malang: 1
+Mojokerto: 1
+Nganjuk: 1
+Ngawi: 1
+Pacitan: 1
+Pamekasan: 0
+Pasuruan: 0
+Ponorogo: 0
+Probolinggo: 0
+Sampang: 0
+Sidoarjo: 0
+Situbondo: 0
+Sumenep: 1
+Trenggalek: 0
+Tuban: 1
+Tulungagung: 1
+
+WILAYAH BELUM TERWAKILI:
+- Blitar
+- Bojonegoro
+- Jombang
+- Kediri
+- Kota Batu
+- Kota Blitar
+- Kota Kediri
+- Kota Madiun
+- Kota Malang
+- Kota Mojokerto
+- Kota Pasuruan
+- Kota Probolinggo
+- Kota Surabaya
+- Lamongan
+- Madiun
+- Magetan
+- Pamekasan
+- Pasuruan
+- Ponorogo
+- Probolinggo
+- Sampang
+- Sidoarjo
+- Situbondo
+- Trenggalek
+
+TITIK GRID TIDAK TERPETAKAN:
+LAT=-8.5, LON=111.25
+LAT=-8.5, LON=111.875
+LAT=-8.5, LON=112.5
+LAT=-8.5, LON=113.125
+LAT=-8.5, LON=114.375
+LAT=-7.5, LON=113.125
+LAT=-7.5, LON=113.75
+LAT=-7.5, LON=114.375
+LAT=-7.0, LON=111.25
+LAT=-7.0, LON=114.375
+
+=================================================================

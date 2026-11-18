@@ -1,0 +1,23 @@
+======================================================================
+AUDIT INTEGRASI NASA POWER DAN WBC
+======================================================================
+Jumlah wilayah: 38
+Jumlah bulan: 10
+Jumlah baris: 380
+Tahun: [2026]
+
+SUMBER DATA:
+NASA POWER 2026
+SiPerDitTan 2026
+
+JUMLAH DATA KOSONG:
+T2M_MEAN: 0
+T2M_MAX: 0
+T2M_MIN: 0
+RH2M_MEAN: 0
+PRECTOTCORR_SUM: 0
+WBC_AFFECTED_HA: 0
+WBC_PUSO_HA: 0
+
+STATUS: BERHASIL
+======================================================================

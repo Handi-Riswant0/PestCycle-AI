@@ -1,10 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
+
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
+
 import {
   Bell,
   MapPin,
   CalendarDays,
-  ChevronDown,
-  ChevronRight,
   Sprout,
   Thermometer,
   Droplets,
@@ -17,7 +22,11 @@ import {
   Map,
   Activity,
   X,
-  Info
+  Info,
+  RefreshCw,
+  AlertTriangle,
+  Database,
+  ChevronRight
 } from "lucide-react";
 
 import {
@@ -27,132 +36,278 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip
+  Tooltip,
+  BarChart,
+  Bar
 } from "recharts";
+
+// ======================================================
+// 1. CONFIGURATION
+// ======================================================
+
+const API = "/api";
+const MAP_JSON = "/koordinat-peta-jawa-timur.json";
 
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 760;
-const MAP_JSON = "/koordinat-peta-jawa-timur.json";
 
-const fmt = (value, digits = 1) =>
-  Number.isFinite(Number(value))
-    ? Number(value).toLocaleString("en-US", {
-        maximumFractionDigits: digits
-      })
-    : "—";
-
-const riskColors = {
-  Low: "#2eaa63",
-  Moderate: "#f2c532",
-  High: "#f28a24",
-  Critical: "#e63d3d",
-  "No data": "#8da798"
+const RISK_COLORS = {
+  low: "#28a66a",
+  moderate: "#e7bd35",
+  high: "#ed8a32",
+  critical: "#df4545",
+  nodata: "#a4b1aa"
 };
 
-let regionRisk = [];
+const INITIAL_LOCATION = "Malang";
 
-let trend = [
-  { day: "1 Des", value: 228 },
-  { day: "3 Des", value: 265 },
-  { day: "5 Des", value: 301 },
-  { day: "7 Des", value: 348 },
-  { day: "9 Des", value: 512 },
-  { day: "11 Des", value: 486 },
-  { day: "13 Des", value: 438 },
-  { day: "15 Des", value: 392 }
-];
+const now = new Date();
 
-function getMapRisk(name, dataList = regionRisk) {
-  const data = dataList.find(item =>
-    String(item.name).trim().toUpperCase() ===
-    String(name).trim().toUpperCase()
-  );
+const INITIAL_START_DATE =
+  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
 
-  if (!data || data.hasData === false) {
-    return {
-      name,
-      score: null,
-      value: null,
-      puso: 0,
-      label: "No data",
-      color: riskColors["No data"],
-      filter: "none",
-      hasData: false
-    };
+const INITIAL_END_DATE =
+  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()).padStart(2, "0")}`;
+
+const fmt = (value, digits = 2) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    !Number.isFinite(Number(value))
+  ) {
+    return "—";
   }
 
-  const value = Number(data.value ?? data.affectedHa ?? 0);
-  const puso = Number(data.puso || 0);
-  const score = Number(data.score ?? 0);
+  return Number(value).toLocaleString("en-US", {
+    maximumFractionDigits: digits
+  });
+};
 
-  // Jika data tersedia dan tidak ditemukan serangan,
-  // wilayah langsung dikategorikan AMAN.
-  if (value <= 0 && puso <= 0) {
-    return {
-      ...data,
-      value: 0,
-      puso: 0,
-      score: 0,
-      label: "Safe",
-      color: riskColors.Low,
-      filter: "none",
-      hasData: true
-    };
+const formatDate = (value) => {
+  if (!value) return "—";
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+};
+
+const normalizeRegion = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/^KABUPATEN\s+/, "")
+    .replace(/^KOTA\s+/, "")
+    .replace(/\s+/g, " ");
+
+async function apiFetch(path, options = {}) {
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...options.headers
+    }
+  });
+
+  const contentType =
+    response.headers.get("content-type") || "";
+
+  let data = null;
+
+  if (contentType.includes("application/json")) {
+    data = await response.json();
   }
 
-  let label = "Low";
-  let color = riskColors.Low;
-  let filter = "hue-rotate(35deg) saturate(1.3)";
-
-  if (score >= 0.85) {
-    label = "Critical";
-    color = riskColors.Critical;
-    filter = "hue-rotate(145deg) saturate(1.7)";
-  } else if (score >= 0.65) {
-    label = "High";
-    color = riskColors.High;
-    filter = "hue-rotate(115deg) saturate(1.5)";
-  } else if (score >= 0.35) {
-    label = "Moderate";
-    color = riskColors.Moderate;
-    filter = "hue-rotate(75deg) saturate(1.4)";
+  if (!response.ok) {
+    throw new Error(
+      data?.detail ||
+      data?.message ||
+      `API Error ${response.status}`
+    );
   }
 
-  return {
-    ...data,
-    value,
-    puso,
-    score,
-    label,
-    color,
-    filter,
-    hasData: true
-  };
+  return data;
 }
 
-function getRegionStyle(region) {
-  const x = Number(region.x);
-  const y = Number(region.y);
-  const w = Number(region.w);
-  const h = Number(region.h);
-  const rotation = Number(region.rotation ?? 0);
+// ======================================================
+// 2. HISTORICAL WBC DATA
+// ======================================================
 
+function getLatestWbcMonth(rows = []) {
+  if (!rows.length) return [];
+
+  const latestKey = Math.max(
+    ...rows.map((item) =>
+      Number(item.tahun || 0) * 100 +
+      Number(item.bulan_ke || 0)
+    )
+  );
+
+  return rows.filter((item) => {
+    const key =
+      Number(item.tahun || 0) * 100 +
+      Number(item.bulan_ke || 0);
+
+    return key === latestKey;
+  });
+}
+
+function getRegionHistory(rows = [], region) {
+  return rows
+    .filter(
+      (item) =>
+        normalizeRegion(item.region) ===
+        normalizeRegion(region)
+    )
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(a.tahun) - Number(b.tahun) ||
+        Number(a.bulan_ke) - Number(b.bulan_ke)
+    )
+    .map((item) => ({
+      date: `${item.tahun}-${String(
+        item.bulan_ke
+      ).padStart(2, "0")}`,
+      month: `${item.bulan} ${item.tahun}`,
+      affected: Number(item.luas_terkena_ha || 0),
+      puso: Number(item.luas_puso_ha || 0)
+    }));
+}
+
+// ======================================================
+// 3. RISK CLASSIFICATION
+// ======================================================
+
+function buildRiskData(mapRegions = [], rows = []) {
+  const latestRows = getLatestWbcMonth(rows);
+
+  const grouped = new globalThis.Map();
+
+  latestRows.forEach((item) => {
+    const key = normalizeRegion(item.region);
+    if (!key) return;
+
+    const previous = grouped.get(key) || {
+      value: 0,
+      puso: 0
+    };
+
+    previous.value += Number(item.luas_terkena_ha || 0);
+    previous.puso += Number(item.luas_puso_ha || 0);
+
+    grouped.set(key, previous);
+  });
+
+  const maxValue = Math.max(
+    0,
+    ...Array.from(grouped.values()).map(item => item.value)
+  );
+
+  return mapRegions.map(region => {
+    const data = grouped.get(normalizeRegion(region.name));
+
+    if (!data) {
+      return {
+        name: region.name,
+        value: null,
+        puso: null,
+        score: null,
+        hasData: false,
+        label: "No Data",
+        level: "nodata",
+        color: RISK_COLORS.nodata
+      };
+    }
+
+    const score = maxValue > 0
+      ? data.value / maxValue
+      : 0;
+
+    let level = "low";
+    let label = "No Reported Attack";
+    let color = RISK_COLORS.low;
+
+    if (data.value > 0) {
+      if (score >= 0.75) {
+        level = "critical";
+        label = "Critical Relative Impact";
+        color = RISK_COLORS.critical;
+      } else if (score >= 0.50) {
+        level = "high";
+        label = "High Relative Impact";
+        color = RISK_COLORS.high;
+      } else if (score >= 0.25) {
+        level = "moderate";
+        label = "Moderate Relative Impact";
+        color = RISK_COLORS.moderate;
+      } else {
+        level = "low";
+        label = "Low Relative Impact";
+        color = RISK_COLORS.low;
+      }
+    }
+
+    return {
+      name: region.name,
+      value: data.value,
+      puso: data.puso,
+      score,
+      hasData: true,
+      label,
+      level,
+      color
+    };
+  });
+}
+
+function getRegionRisk(region, riskData = []) {
+  const result = riskData.find(
+    (item) =>
+      normalizeRegion(item.name) ===
+      normalizeRegion(region)
+  );
+
+  if (!result) {
+    return {
+      name: region,
+      value: null,
+      puso: null,
+      score: null,
+      hasData: false,
+      label: "No Data",
+      level: "nodata",
+      color: RISK_COLORS.nodata
+    };
+  }
+
+  return result;
+}
+
+// ======================================================
+// 4. MAP COMPONENT
+// ======================================================
+
+function getMapStyle(region) {
   return {
     position: "absolute",
-    left: `${(x / MAP_WIDTH) * 100}%`,
-    top: `${(y / MAP_HEIGHT) * 100}%`,
-    width: `${(w / MAP_WIDTH) * 100}%`,
-    height: `${(h / MAP_HEIGHT) * 100}%`,
-    boxSizing: "border-box",
-    transform: `rotate(${rotation}deg)`,
-    transformOrigin: "center center",
+    left: `${(Number(region.x) / MAP_WIDTH) * 100}%`,
+    top: `${(Number(region.y) / MAP_HEIGHT) * 100}%`,
+    width: `${(Number(region.w) / MAP_WIDTH) * 100}%`,
+    height: `${(Number(region.h) / MAP_HEIGHT) * 100}%`,
+    transform: `rotate(${Number(region.rotation || 0)}deg)`,
+    transformOrigin: "center",
     padding: 0,
-    margin: 0,
     border: 0,
-    borderRadius: 0,
+    margin: 0,
     background: "transparent",
-    overflow: "visible",
-    lineHeight: 0
+    overflow: "visible"
   };
 }
 
@@ -163,7 +318,10 @@ function EastJavaMap({
   riskData = [],
   large = false
 }) {
-  const selectedRisk = getMapRisk(selected, riskData);
+  const selectedRisk = getRegionRisk(
+    selected,
+    riskData
+  );
 
   return (
     <div
@@ -171,27 +329,34 @@ function EastJavaMap({
         large ? "map-large" : ""
       }`}
       role="group"
-      aria-label="Interactive map of East Java’s 38 regencies and cities"
+      aria-label="Interactive East Java WBC risk map"
       style={{
         position: "relative",
         width: "100%",
-        height: "auto",
-        minHeight: 0,
-        aspectRatio: `${MAP_WIDTH} / ${MAP_HEIGHT}`,
+        aspectRatio: `${MAP_WIDTH}/${MAP_HEIGHT}`,
         overflow: "hidden",
-        isolation: "isolate",
-        background: "#ffffff"
+        background: "#ffffff",
+        isolation: "isolate"
       }}
     >
       {mapRegions.length === 0 && (
         <div className="map-loading-message">
-          Memuat koordinat peta...
+          Loading regional map...
         </div>
       )}
 
-      {mapRegions.map(region => {
-        const risk = getMapRisk(region.name, riskData);
-        const isSelected = region.name === selected;
+      {mapRegions.map((region) => {
+        const risk = getRegionRisk(
+          region.name,
+          riskData
+        );
+
+        const isSelected =
+          normalizeRegion(region.name) ===
+          normalizeRegion(selected);
+
+        const imageUrl =
+          `/wilayah-jatim/${region.file}.png`;
 
         return (
           <button
@@ -201,40 +366,90 @@ function EastJavaMap({
               isSelected ? "selected" : ""
             }`}
             style={{
-              ...getRegionStyle(region),
+              ...getMapStyle(region),
               zIndex: isSelected ? 100 : 1,
-              cursor: "pointer",
-              background: "transparent"
+              cursor: "pointer"
             }}
-            onClick={() => onSelect?.(region.name)}
-            title={`${region.name} - ${risk.label}`}
-            aria-label={`${region.name}, ${risk.label}`}
+            onClick={() => onSelect(region.name)}
+            title={`${region.name}: ${risk.label}`}
+            aria-label={`${region.name}: ${risk.label}`}
             aria-pressed={isSelected}
           >
-            <img
-              src={`/wilayah-jatim/${region.file}.png`}
-              alt={region.name}
-              draggable="false"
-              loading="eager"
+            <span
+              aria-hidden="true"
               style={{
                 display: "block",
                 width: "100%",
                 height: "calc(100% - 17px)",
-                objectFit: "contain",
-                objectPosition: "center",
-                filter: risk.filter,
-                pointerEvents: "none",
-                userSelect: "none"
-              }}
-              onError={event => {
-                console.error(
-                  "Gagal memuat gambar:",
-                  region.name,
-                  event.currentTarget.src
-                );
-                event.currentTarget.style.opacity = "0";
+
+                backgroundColor: risk.color,
+
+                WebkitMaskImage: `url("${imageUrl}")`,
+                maskImage: `url("${imageUrl}")`,
+
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+
+                WebkitMaskPosition: "center",
+                maskPosition: "center",
+
+                WebkitMaskSize: "contain",
+                maskSize: "contain",
+
+                opacity: risk.hasData ? 1 : 0.65,
+
+                transition:
+                  "background-color 0.3s ease, opacity 0.3s ease"
               }}
             />
+
+            
+
+{/* ORIGINAL MAP IMAGE WITH WHITE LABELS */}
+<img
+  src={imageUrl}
+  alt={region.name}
+  draggable={false}
+  style={{
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+    pointerEvents: "none",
+    userSelect: "none",
+    zIndex: 1
+  }}
+/>
+
+{/* DYNAMIC RISK COLOR OVERLAY */}
+<span
+  aria-hidden="true"
+  style={{
+    position: "absolute",
+    inset: 0,
+    backgroundColor: risk.color,
+
+    WebkitMaskImage: `url("${imageUrl}")`,
+    maskImage: `url("${imageUrl}")`,
+
+    WebkitMaskRepeat: "no-repeat",
+    maskRepeat: "no-repeat",
+
+    WebkitMaskPosition: "center",
+    maskPosition: "center",
+
+    WebkitMaskSize: "contain",
+    maskSize: "contain",
+
+    mixBlendMode: "hue",
+    pointerEvents: "none",
+    zIndex: 2,
+    opacity: risk.hasData ? 1 : 0.65
+  }}
+/>
+
+
           </button>
         );
       })}
@@ -243,7 +458,9 @@ function EastJavaMap({
         className="map-selected-info"
         aria-live="polite"
       >
-        <strong>{selected}</strong>
+        <strong>
+          {selected || "Select a region"}
+        </strong>
 
         <span style={{ color: selectedRisk.color }}>
           ● {selectedRisk.label}
@@ -251,13 +468,23 @@ function EastJavaMap({
 
         {selectedRisk.value !== null && (
           <small>
-            {selectedRisk.value} individuals/m²
+            Affected Area: {fmt(selectedRisk.value)} ha
+          </small>
+        )}
+
+        {!selectedRisk.hasData && (
+          <small>
+            Regional data is not available.
           </small>
         )}
       </div>
     </div>
   );
 }
+
+// ======================================================
+// 5. METRIC COMPONENT
+// ======================================================
 
 function Metric({
   icon: Icon,
@@ -281,32 +508,26 @@ function Metric({
   );
 }
 
+// ======================================================
+// 6. NOTIFICATION COMPONENT
+// ======================================================
+
 function NotificationToast({
-  onClose,
   location,
-  notifications = []
+  notifications,
+  onClose
 }) {
-  if (notifications.length === 0) return null;
+  if (!notifications.length) return null;
 
   return (
-    <div
-      className="toast"
-      style={{
-        borderLeftColor: "#f28a24"
-      }}
-    >
+    <div className="toast">
       <div className="toast-icon">
         <Bell size={19} />
       </div>
 
       <div className="toast-copy">
-        <strong>
-          BPH Alert · {location}
-        </strong>
-
-        <span>
-          {notifications[0].message}
-        </span>
+        <strong>WBC Alert · {location}</strong>
+        <span>{notifications[0].message}</span>
       </div>
 
       <button
@@ -320,323 +541,161 @@ function NotificationToast({
   );
 }
 
+// ======================================================
+// 7. MAIN APPLICATION
+// ======================================================
+
 export default function App() {
+
+  // ----------------------------------------------------
+  // A. MAIN STATES
+  // ----------------------------------------------------
+
   const [tab, setTab] = useState("mine");
 
   const [clockNow, setClockNow] = useState(
     () => new Date()
   );
 
-  const [locationStatus, setLocationStatus] = useState(
-    "Detecting location..."
+  const [myLocation, setMyLocation] = useState(
+    INITIAL_LOCATION
   );
-
-  const [apiReady, setApiReady] = useState(false);
-  const [apiError, setApiError] = useState("");
-  const [apiWeather, setApiWeather] = useState(null);
-  const [apiWbc, setApiWbc] = useState([]);
-  const [apiMonthly, setApiMonthly] = useState([]);
-  const [apiMetrics, setApiMetrics] = useState(null);
-
-  const [riskData, setRiskData] = useState([]);
-  const [trendData, setTrendData] = useState(trend);
-
-  const [mapRegions, setMapRegions] = useState([]);
-  const [mapError, setMapError] = useState("");
-
-  const locations = useMemo(
-    () => mapRegions.map(region => region.name),
-    [mapRegions]
-  );
-
-  const [myLocation, setMyLocation] = useState("Malang");
 
   const [predictionLocation, setPredictionLocation] =
     useState("Banyuwangi");
 
-  const [startDate, setStartDate] =
-    useState("2026-12-01");
+  const [startDate, setStartDate] = useState(
+    INITIAL_START_DATE
+  );
 
-  const [endDate, setEndDate] =
-    useState("2026-12-15");
+  const [endDate, setEndDate] = useState(
+    INITIAL_END_DATE
+  );
 
-  const [toastVisible, setToastVisible] = useState(true);
+  // ----------------------------------------------------
+  // B. BACKEND STATES
+  // ----------------------------------------------------
+
+  const [apiReady, setApiReady] = useState(false);
+  const [apiLoading, setApiLoading] = useState(true);
+  const [apiError, setApiError] = useState("");
+
+  const [apiHealth, setApiHealth] = useState(null);
+  const [apiWeather, setApiWeather] = useState(null);
+
+  const [weatherLoading, setWeatherLoading] =
+    useState(false);
+
+  const [weatherError, setWeatherError] = useState("");
+
+  const [apiWbc, setApiWbc] = useState([]);
+  const [apiMonthly, setApiMonthly] = useState([]);
+  const [apiMetrics, setApiMetrics] = useState(null);
+
+  // ----------------------------------------------------
+  // C. MAP STATES
+  // ----------------------------------------------------
+
+  const [mapRegions, setMapRegions] = useState([]);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [mapError, setMapError] = useState("");
+
+  // ----------------------------------------------------
+  // D. PREDICTION STATES
+  // ----------------------------------------------------
+
+  const [predictionResult, setPredictionResult] =
+    useState(null);
+
+  const [predictionLoading, setPredictionLoading] =
+    useState(false);
+
+  const [predictionError, setPredictionError] =
+    useState("");
+
+  const [predicted, setPredicted] = useState(false);
+
+  // ----------------------------------------------------
+  // E. NOTIFICATION STATES
+  // ----------------------------------------------------
 
   const [notificationOpen, setNotificationOpen] =
     useState(false);
 
-  const [predicted, setPredicted] = useState(false);
-const [predictionResult, setPredictionResult] = useState(null);
+  const [toastVisible, setToastVisible] =
+    useState(false);
+
+  // ----------------------------------------------------
+  // F. DERIVED DATA
+  // ----------------------------------------------------
+
+  const locations = useMemo(
+    () => mapRegions.map((region) => region.name),
+    [mapRegions]
+  );
+
+  const riskData = useMemo(
+    () => buildRiskData(mapRegions, apiWbc),
+    [mapRegions, apiWbc]
+  );
+
+  const current = useMemo(
+    () => getRegionRisk(myLocation, riskData),
+    [myLocation, riskData]
+  );
+
+  const mineTrend = useMemo(
+    () => getRegionHistory(apiWbc, myLocation),
+    [apiWbc, myLocation]
+  );
+
+  const predictionHistory = useMemo(
+    () => getRegionHistory(apiWbc, predictionLocation),
+    [apiWbc, predictionLocation]
+  );
+
+  const latestWbcDate = useMemo(() => {
+    if (!apiWbc.length) return "—";
+
+    const latest = getLatestWbcMonth(apiWbc);
+
+    if (!latest.length) return "—";
+
+    return `${latest[0].bulan} ${latest[0].tahun}`;
+  }, [apiWbc]);
+
+  const weatherValues = apiWeather?.values || {};
+
+  // ----------------------------------------------------
+  // 8. REAL-TIME CLOCK
+  // ----------------------------------------------------
+
   useEffect(() => {
-    const timer = window.setInterval(
-      () => setClockNow(new Date()),
-      1000
-    );
+    const timer = window.setInterval(() => {
+      setClockNow(new Date());
+    }, 1000);
 
     return () => window.clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (!locations.length) return;
+  // ----------------------------------------------------
+  // 9. LOAD EAST JAVA MAP DATA
+  // ----------------------------------------------------
 
-    if (!navigator.geolocation) {
-      setLocationStatus(
-        "Location is unavailable on this device"
-      );
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async position => {
-        try {
-          const { latitude, longitude } = position.coords;
-
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=id`
-          );
-
-          if (!response.ok) {
-            throw new Error(
-              "Unable to identify the location"
-            );
-          }
-
-          const result = await response.json();
-          const address = result.address || {};
-
-          const candidates = [
-            address.city,
-            address.town,
-            address.municipality,
-            address.county,
-            address.city_district,
-            address.state_district
-          ].filter(Boolean);
-
-          const normalize = value =>
-            String(value)
-              .toLowerCase()
-              .replace(/^kabupaten\s+/i, "")
-              .replace(/^kota\s+/i, "")
-              .trim();
-
-          const match = locations.find(name =>
-            candidates.some(
-              candidate =>
-                normalize(candidate) === normalize(name)
-            )
-          );
-
-          if (match) {
-            setMyLocation(match);
-            setPredictionLocation(current => current || match);
-            setLocationStatus(
-              "Location detected automatically"
-            );
-          } else {
-            setLocationStatus(
-              "Location detected outside the East Java region list"
-            );
-          }
-        } catch (error) {
-          setLocationStatus(
-            "Location detected, but the region could not be matched"
-          );
-        }
-      },
-      () =>
-        setLocationStatus(
-          "Allow location access to display your region"
-        ),
-      {
-        enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 300000
-      }
-    );
-  }, [locations]);
   useEffect(() => {
     let active = true;
 
-    async function loadDashboardData() {
-      try {
-        const [
-          healthRes,
-          wbcRes,
-          monthlyRes,
-          metricsRes
-        ] = await Promise.all([
-          fetch("/api/health"),
-          fetch("/api/wbc/2026"),
-          fetch("/api/wbc/summary/monthly"),
-          fetch("/api/model/metrics")
-        ]);
+    async function loadMap() {
+      setMapLoading(true);
 
-        for (const response of [
-          healthRes,
-          wbcRes,
-          monthlyRes,
-          metricsRes
-        ]) {
-          if (!response.ok) {
-            throw new Error(
-              "The API could not retrieve data. Make sure the backend is running on port 8000."
-            );
-          }
-        }
-
-        const [
-          health,
-          wbcData,
-          monthlyData,
-          metrics
-        ] = await Promise.all([
-          healthRes.json(),
-          wbcRes.json(),
-          monthlyRes.json(),
-          metricsRes.json()
-        ]);
-
-        const weatherRes = await fetch(
-          "/api/weather/latest"
-        );
-
-        const weather = weatherRes.ok
-          ? await weatherRes.json()
-          : null;
-
-        if (!active) return;
-
-        setApiWeather(weather);
-        setApiWbc(wbcData.items || []);
-        setApiMonthly(monthlyData.items || []);
-        setApiMetrics(metrics);
-        setApiError("");
-
-        // Mengambil data bulan terakhir yang tersedia.
-        const latestMonth = Math.max(
-          0,
-          ...(wbcData.items || []).map(
-            x => Number(x.bulan_ke || 0)
-          )
-        );
-
-        const byRegion = new globalThis.Map();
-
-        (wbcData.items || [])
-          .filter(
-            x => Number(x.bulan_ke) === latestMonth
-          )
-          .forEach(x => {
-            const name = String(
-              x.region || ""
-            ).trim();
-
-            if (!name) return;
-
-            const key = name.toUpperCase();
-
-            const previous = byRegion.get(key) || {
-              name,
-              value: 0,
-              puso: 0,
-              hasData: true
-            };
-
-            previous.value += Number(
-              x.luas_terkena_ha || 0
-            );
-
-            previous.puso += Number(
-              x.luas_puso_ha || 0
-            );
-
-            byRegion.set(key, previous);
-          });
-
-        const maxAffected = Math.max(
-          0,
-          ...Array.from(byRegion.values()).map(
-            x => x.value
-          )
-        );
-
-        const nextRiskData = Array.from(
-          byRegion.values()
-        ).map(x => {
-          const score = maxAffected > 0
-            ? x.value / maxAffected
-            : 0;
-
-          const risk = getMapRisk(
-            x.name,
-            [{ ...x, score }]
-          );
-
-          return {
-            ...x,
-            score,
-            color: risk.color,
-            label: risk.label,
-            hasData: true
-          };
-        });
-
-        regionRisk = nextRiskData;
-        setRiskData(nextRiskData);
-
-        const chosen = (wbcData.items || []).filter(
-          x =>
-            String(x.region).toUpperCase() ===
-            "BANYUWANGI"
-        );
-
-        if (chosen.length) {
-          setTrendData(
-            chosen
-              .sort(
-                (a, b) => a.bulan_ke - b.bulan_ke
-              )
-              .map(x => ({
-                day: x.bulan,
-                value: Number(
-                  x.luas_terkena_ha || 0
-                )
-              }))
-          );
-        }
-
-        setApiReady(true);
-      } catch (error) {
-        if (active) {
-          setApiError(
-            error.message || "Failed to load API data."
-          );
-
-          setApiReady(false);
-        }
-      }
-    }
-
-    loadDashboardData();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadMapCoordinates() {
       try {
         const response = await fetch(
-          `${MAP_JSON}?v=1`
+          `${MAP_JSON}?v=3`
         );
 
         if (!response.ok) {
           throw new Error(
-            "The map-coordinate file was not found in the public folder."
+            "Regional map coordinate file could not be found."
           );
         }
 
@@ -647,267 +706,508 @@ const [predictionResult, setPredictionResult] = useState(null);
           data.length !== 38
         ) {
           throw new Error(
-            "The JSON file must contain exactly 38 regions."
+            "The map must contain exactly 38 regions."
           );
         }
 
-        const validData = data.map(
-          (region, index) => {
-            const valid =
-              region &&
-              typeof region.name === "string" &&
-              typeof region.file === "string" &&
-              ["x", "y", "w", "h"].every(
-                key =>
-                  Number.isFinite(
-                    Number(region[key])
-                  )
-              ) &&
-              Number(region.w) > 0 &&
-              Number(region.h) > 0 &&
-              Number.isFinite(
-                Number(region.rotation ?? 0)
-              );
+        const valid = data.map((region, index) => {
+          const validRegion =
+            region &&
+            typeof region.name === "string" &&
+            typeof region.file === "string" &&
+            ["x", "y", "w", "h"].every(
+              (key) =>
+                Number.isFinite(Number(region[key]))
+            ) &&
+            Number(region.w) > 0 &&
+            Number(region.h) > 0;
 
-            if (!valid) {
-              throw new Error(
-                `Coordinates for region ${index + 1} are invalid.`
-              );
-            }
-
-            return {
-              ...region,
-              x: Number(region.x),
-              y: Number(region.y),
-              w: Number(region.w),
-              h: Number(region.h),
-              rotation: Number(
-                region.rotation ?? 0
-              )
-            };
+          if (!validRegion) {
+            throw new Error(
+              `Invalid map coordinates for region ${index + 1}.`
+            );
           }
-        );
 
-        if (isMounted) {
-          setMapRegions(validData);
+          return {
+            ...region,
+            x: Number(region.x),
+            y: Number(region.y),
+            w: Number(region.w),
+            h: Number(region.h),
+            rotation: Number(region.rotation || 0)
+          };
+        });
+
+        if (active) {
+          setMapRegions(valid);
           setMapError("");
         }
-      } catch (error) {
-        console.error(
-          "Failed to load map coordinates:",
-          error
-        );
 
-        if (isMounted) {
+      } catch (error) {
+        if (active) {
           setMapError(error.message);
           setMapRegions([]);
+        }
+
+      } finally {
+        if (active) {
+          setMapLoading(false);
         }
       }
     }
 
-    loadMapCoordinates();
+    loadMap();
 
     return () => {
-      isMounted = false;
+      active = false;
     };
   }, []);
 
-  useEffect(() => {
-    if (!apiWbc.length) return;
+  // ----------------------------------------------------
+  // 10. LOAD MAIN BACKEND DATA
+  // ----------------------------------------------------
 
-    const rows = apiWbc.filter(
-      x =>
-        String(x.region).toUpperCase() ===
-        String(myLocation).toUpperCase()
-    );
+  const loadDashboardData = useCallback(
+    async (signal) => {
+      setApiLoading(true);
+      setApiError("");
 
-    if (rows.length) {
-      setTrendData(
-        rows
-          .slice()
-          .sort(
-            (a, b) => a.bulan_ke - b.bulan_ke
-          )
-          .map(x => ({
-            day: x.bulan,
-            value: Number(
-              x.luas_terkena_ha || 0
-            )
-          }))
-      );
-    }
-  }, [myLocation, apiWbc]);
+      try {
+        const [
+          health,
+          wbcData,
+          monthlyData,
+          metrics
+        ] = await Promise.all([
+          apiFetch("/health", { signal }),
+          apiFetch("/wbc/2026", { signal }),
+          apiFetch("/wbc/summary/monthly", { signal }),
+          apiFetch("/model/metrics", { signal })
+        ]);
 
-  useEffect(() => {
-    if (!apiWbc.length) return;
+        if (signal.aborted) return;
 
-    const rows = apiWbc.filter(
-      x =>
-        String(x.region).toUpperCase() ===
-        String(predictionLocation).toUpperCase()
-    );
+        if (!Array.isArray(wbcData.items)) {
+          throw new Error(
+            "Invalid WBC data format returned by the backend."
+          );
+        }
 
-    if (rows.length) {
-      setTrendData(
-        rows
-          .slice()
-          .sort(
-            (a, b) => a.bulan_ke - b.bulan_ke
-          )
-          .map(x => ({
-            day: x.bulan,
-            value: Number(
-              x.luas_terkena_ha || 0
-            )
-          }))
-      );
-    }
-  }, [predictionLocation, apiWbc]);
+        setApiHealth(health);
+        setApiWbc(wbcData.items);
+        setApiMonthly(monthlyData.items || []);
+        setApiMetrics(metrics);
 
-  const current = useMemo(
-    () => getMapRisk(myLocation, riskData),
-    [myLocation, riskData]
+        setApiReady(true);
+        setApiError("");
+
+      } catch (error) {
+        if (signal.aborted) return;
+
+        setApiReady(false);
+        setApiError(error.message);
+
+      } finally {
+        if (!signal.aborted) {
+          setApiLoading(false);
+        }
+      }
+    },
+    []
   );
 
-  const isSafe =
-  current.hasData &&
-  Number(current.value || 0) === 0 &&
-  Number(current.puso || 0) === 0;
+  useEffect(() => {
+    const controller = new AbortController();
 
-const needleAngle = !current.hasData
-  ? 0
-  : isSafe
-    ? -90
-    : -90 + Math.max(
-        0,
-        Math.min(1, Number(current.score || 0))
-      ) * 180;
+    loadDashboardData(controller.signal);
 
-  const prediction = useMemo(
-    () => getMapRisk(predictionLocation, riskData),
-    [predictionLocation, riskData]
-  );
+    return () => controller.abort();
+  }, [loadDashboardData]);
 
-  // NOTIFIKASI KHUSUS WILAYAH SAYA
+  // ----------------------------------------------------
+  // 11. REGIONAL WEATHER
+  // ----------------------------------------------------
+
+  useEffect(() => {
+    if (!myLocation) return;
+
+    const controller = new AbortController();
+
+    async function loadRegionalWeather() {
+      setWeatherLoading(true);
+      setWeatherError("");
+      setApiWeather(null);
+
+      try {
+        const region = encodeURIComponent(myLocation);
+
+        const result = await apiFetch(
+          `/weather/latest?region=${region}`,
+          { signal: controller.signal }
+        );
+
+        if (!controller.signal.aborted) {
+          setApiWeather(result);
+        }
+
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setApiWeather(null);
+          setWeatherError(error.message);
+        }
+
+      } finally {
+        if (!controller.signal.aborted) {
+          setWeatherLoading(false);
+        }
+      }
+    }
+
+    loadRegionalWeather();
+
+    return () => controller.abort();
+  }, [myLocation]);
+
+  // ----------------------------------------------------
+  // 12. DEFAULT REGION VALIDATION
+  // ----------------------------------------------------
+
+  useEffect(() => {
+    if (!locations.length) return;
+
+    const selectedExists = locations.some(
+      (name) =>
+        normalizeRegion(name) ===
+        normalizeRegion(myLocation)
+    );
+
+    if (!selectedExists) {
+      setMyLocation(locations[0]);
+    }
+
+    const predictionExists = locations.some(
+      (name) =>
+        normalizeRegion(name) ===
+        normalizeRegion(predictionLocation)
+    );
+
+    if (!predictionExists) {
+      setPredictionLocation(locations[0]);
+    }
+  }, [
+    locations,
+    myLocation,
+    predictionLocation
+  ]);
+
+  // ----------------------------------------------------
+  // 13. DATA-BASED NOTIFICATIONS
+  // ----------------------------------------------------
+
   const localNotifications = useMemo(() => {
-    if (!current.hasData) return [];
+    if (!current.hasData) {
+      return [{
+        id: "no-data",
+        title: "Regional Data Unavailable",
+        message:
+          `No recent WBC observation data is available for ${myLocation}. Field monitoring is recommended.`,
+        type: "info"
+      }];
+    }
 
-    const items = [];
+    const notifications = [];
 
     if (Number(current.value || 0) > 0) {
-      items.push({
-        id: "serangan",
-        title: "BPH infestation reported",
-        message: `Affected area recorded: ${fmt(
-          current.value
-        )} ha di ${myLocation}.`
+      notifications.push({
+        id: "affected-area",
+        title: "Reported WBC Attack",
+        message:
+          `A reported affected area of ${fmt(
+            current.value
+          )} ha has been recorded in ${myLocation}.`,
+        type: "warning"
       });
     }
 
     if (Number(current.puso || 0) > 0) {
-      items.push({
-        id: "puso",
-        title: "Crop failure reported",
-        message: `Crop failure area recorded: ${fmt(
-          current.puso
-        )} ha di ${myLocation}.`
+      notifications.push({
+        id: "puso-area",
+        title: "Reported Crop Failure",
+        message:
+          `A crop failure area of ${fmt(
+            current.puso
+          )} ha has been recorded in ${myLocation}.`,
+        type: "critical"
       });
     }
 
-    return items;
+    if (notifications.length === 0) {
+      notifications.push({
+        id: "no-reported-attack",
+        title: "No Reported Attack",
+        message:
+          `No affected area was recorded in the latest available WBC data for ${myLocation}. This does not confirm that the region is pest-free.`,
+        type: "safe"
+      });
+    }
+
+    return notifications;
   }, [current, myLocation]);
 
-  // REKOMENDASI OTOMATIS BERDASARKAN NOTIFIKASI
+  // ----------------------------------------------------
+  // 14. MITIGATION RECOMMENDATIONS
+  // ----------------------------------------------------
+
   const localRecommendations = useMemo(() => {
-    if (
-      !current.hasData ||
-      localNotifications.length === 0
-    ) {
-      return [];
+    if (!current.hasData) {
+      return [
+        "Regional WBC data is unavailable. Do not classify the region as safe.",
+        "Conduct field observations and coordinate with local plant protection officers.",
+        "Collect and report updated WBC population observations."
+      ];
     }
 
-    const items = [];
+    const recommendations = [];
 
     if (Number(current.value || 0) > 0) {
-      items.push(
-        "Inspect rice plants directly and record the BPH population."
+      recommendations.push(
+        "Conduct direct field observations in rice fields with reported WBC attacks."
       );
 
-      items.push(
-        "Coordinate field observations with local plant pest and disease officers."
+      recommendations.push(
+        "Record WBC population by nymph and adult development stages."
+      );
+
+      recommendations.push(
+        "Monitor natural enemies before deciding on pest control measures."
       );
     }
 
     if (Number(current.puso || 0) > 0) {
-      items.push(
-        "Inspect affected areas and document the extent of crop damage."
+      recommendations.push(
+        "Map and document crop failure areas for damage assessment."
       );
     }
 
-    items.push(
-      "Select control measures based on field observations and the economic threshold."
+    if (
+      Number(current.value || 0) === 0 &&
+      Number(current.puso || 0) === 0
+    ) {
+      recommendations.push(
+        "Maintain routine monitoring of WBC populations."
+      );
+
+      recommendations.push(
+        "No affected area was recorded in the latest available dataset. Continue field observations."
+      );
+    }
+
+    recommendations.push(
+      "Select control measures based on field observations, applicable economic thresholds, and guidance from plant protection officers."
     );
 
-    return items;
-  }, [current, localNotifications]);
+    return recommendations;
+  }, [current]);
+
+  // ----------------------------------------------------
+  // 15. TOAST NOTIFICATION
+  // ----------------------------------------------------
 
   useEffect(() => {
     setToastVisible(true);
   }, [myLocation]);
 
-  const titleDate = date => {
-    if (!date) return "-";
+  // ----------------------------------------------------
+  // 16. REGION SELECTION
+  // ----------------------------------------------------
 
-    return new Date(
-      `${date}T00:00:00`
-    ).toLocaleDateString(
-      "en-US",
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-      }
-    );
+  const handleMyLocationChange = (location) => {
+    setMyLocation(location);
+    setToastVisible(true);
   };
 
-const handlePrediction = async () => {
-  if (!startDate || !endDate) {
-    alert("Please select both a start date and an end date.");
-    return;
-  }
+  const handlePredictionLocationChange = (location) => {
+    setPredictionLocation(location);
 
-  if (endDate < startDate) {
-    alert("The end date cannot be earlier than the start date.");
-    return;
-  }
+    setPredictionResult(null);
+    setPredictionError("");
+    setPredicted(false);
+  };
 
-  setPredicted(false);
+  // ----------------------------------------------------
+  // 17. AI PREDICTION
+  // ----------------------------------------------------
 
-  try {
-    const response = await fetch(
-      `/api/wbc/predict?region=${encodeURIComponent(predictionLocation)}&start_date=${startDate}&end_date=${endDate}`
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to retrieve the prediction from the backend.");
+  const handlePrediction = async () => {
+    if (!predictionLocation) {
+      setPredictionError(
+        "Please select a region."
+      );
+      return;
     }
 
-    const result = await response.json();
+    if (!startDate || !endDate) {
+      setPredictionError(
+        "Both start and end dates are required."
+      );
+      return;
+    }
 
-    setPredictionResult(result);
-    setPredicted(true);
+    if (startDate > endDate) {
+      setPredictionError(
+        "The start date cannot be later than the end date."
+      );
+      return;
+    }
 
-  } catch (error) {
-    console.error("Prediction error:", error);
-    alert(
-      "The prediction could not be generated. Check the backend prediction endpoint."
+    setPredictionLoading(true);
+    setPredictionError("");
+    setPredictionResult(null);
+    setPredicted(false);
+
+    try {
+      const params = new URLSearchParams({
+        region: predictionLocation,
+        start_date: startDate,
+        end_date: endDate
+      });
+
+      const result = await apiFetch(
+        `/wbc/predict?${params.toString()}`
+      );
+
+      if (
+        result.success !== true ||
+        !Array.isArray(result.items)
+      ) {
+        throw new Error(
+          "Invalid prediction response returned by the backend."
+        );
+      }
+
+      setPredictionResult(result);
+      setPredicted(true);
+
+    } catch (error) {
+      setPredictionError(error.message);
+
+      console.error(
+        "WBC prediction failed:",
+        error
+      );
+
+    } finally {
+      setPredictionLoading(false);
+    }
+  };
+
+  // ----------------------------------------------------
+  // 18. PREDICTION RESULTS
+  // ----------------------------------------------------
+
+  const predictionItems = useMemo(() => {
+    if (!predictionResult?.items) return [];
+
+    return predictionResult.items.map((item) => ({
+      ...item,
+
+      predicted_affected_ha: Number(
+        item.predicted_affected_ha || 0
+      ),
+
+      probability: Math.max(
+        0,
+        Math.min(1, Number(item.probability || 0))
+      ),
+
+      label: item.date || "—"
+    }));
+  }, [predictionResult]);
+
+  const predictionSummary = useMemo(() => {
+    if (!predictionItems.length) {
+      return {
+        totalArea: null,
+        averageProbability: null,
+        highestProbability: null,
+        potentialPeriods: 0
+      };
+    }
+
+    const probabilities = predictionItems.map(
+      (item) => item.probability
     );
-  }
-};
+
+    return {
+      totalArea: predictionItems.reduce(
+        (sum, item) =>
+          sum + item.predicted_affected_ha,
+        0
+      ),
+
+      averageProbability:
+        probabilities.reduce(
+          (sum, value) => sum + value,
+          0
+        ) / probabilities.length,
+
+      highestProbability: Math.max(
+        ...probabilities
+      ),
+
+      potentialPeriods: predictionItems.filter(
+        (item) => item.probability >= 0.5
+      ).length
+    };
+  }, [predictionItems]);
+
+  // ----------------------------------------------------
+  // 19. RISK GAUGE
+  // ----------------------------------------------------
+
+  const isSafe =
+    current.hasData &&
+    Number(current.value || 0) === 0 &&
+    Number(current.puso || 0) === 0;
+
+  const gaugeScore = !current.hasData
+    ? null
+    : isSafe
+      ? 0
+      : Math.max(
+          0,
+          Math.min(1, Number(current.score || 0))
+        );
+
+  // The needle moves from the left side (-90 degrees)
+  // to the right side (+90 degrees).
+
+
+const needleAngle = !current.hasData
+  ? 0
+  : -90 + (
+      Math.max(
+        0,
+        Math.min(1, Number(current.score || 0))
+      ) * 180
+    );
+
+
+  const titleDate = formatDate;
+
+  const latestRecordLabel = latestWbcDate;
+
+  // ====================================================
+  // 20. APPLICATION INTERFACE
+  // ====================================================
 
   return (
     <div className="app-shell">
+
+      {/* HEADER */}
+
       <header className="topbar">
+
         <div className="brand">
           <div className="brand-mark">
             <Sprout size={29} />
@@ -919,7 +1219,7 @@ const handlePrediction = async () => {
             </b>
 
             <small>
-              Early Warning & BPH Forecasting System
+              Early Warning & WBC Forecasting System
             </small>
           </div>
         </div>
@@ -933,11 +1233,13 @@ const handlePrediction = async () => {
         </div>
 
         <div className="top-actions">
+
           <div className="notification-wrap">
+
             <button
               className="icon-button bell-button"
               onClick={() =>
-                setNotificationOpen(!notificationOpen)
+                setNotificationOpen((value) => !value)
               }
               aria-label="Open notifications"
             >
@@ -952,78 +1254,87 @@ const handlePrediction = async () => {
 
             {notificationOpen && (
               <div className="notification-popover">
-                <strong>
-                  Latest Notifications
-                </strong>
 
-                {localNotifications.length === 0 ? (
-                  <p>
-                    <b>{myLocation}</b>: the region is currently safe based on the latest available data.
+                <strong>WBC Notifications</strong>
+
+                {localNotifications.map((item) => (
+                  <p key={item.id}>
+                    <b>{item.title}</b>
+                    <br />
+                    {item.message}
                   </p>
-                ) : (
-                  localNotifications.map(item => (
-                    <p key={item.id}>
-                      <b>{item.title}</b>
-                      <br />
-                      {item.message}
-                    </p>
-                  ))
-                )}
+                ))}
+
               </div>
             )}
+
           </div>
 
-          <div
-            className="auto-location-label"
-            title={locationStatus}
-          >
+          <div className="location-select">
             <MapPin size={17} />
-            <span>{myLocation}</span>
+
+            <select
+              value={myLocation}
+              onChange={(event) =>
+                handleMyLocationChange(
+                  event.target.value
+                )
+              }
+              aria-label="Select monitoring region"
+            >
+              {locations.map((location) => (
+                <option
+                  key={location}
+                  value={location}
+                >
+                  {location}
+                </option>
+              ))}
+            </select>
           </div>
+
         </div>
       </header>
 
-      <section
-        className="live-datetime"
-        aria-label="Date and time in Western Indonesia Time"
-      >
+      {/* REAL-TIME CLOCK */}
+
+      <section className="live-datetime">
+
         <div className="live-date">
           <CalendarDays size={17} />
 
           <span>
-            {clockNow.toLocaleDateString(
-              "en-US",
-              {
-                timeZone: "Asia/Jakarta",
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric"
-              }
-            )}
+            {clockNow.toLocaleDateString("en-US", {
+              timeZone: "Asia/Jakarta",
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric"
+            })}
           </span>
         </div>
+
         <div className="live-clock">
           <span className="clock-dot" />
 
           <strong>
-            {clockNow.toLocaleTimeString(
-              "en-US",
-              {
-                timeZone: "Asia/Jakarta",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false
-              }
-            )}
+            {clockNow.toLocaleTimeString("en-US", {
+              timeZone: "Asia/Jakarta",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false
+            })}
           </strong>
 
           <small>WIB · Indonesia</small>
         </div>
+
       </section>
 
-      {toastVisible && localNotifications.length > 0 && (
+      {/* NOTIFICATION TOAST */}
+
+      {toastVisible && (
         <NotificationToast
           location={myLocation}
           notifications={localNotifications}
@@ -1031,12 +1342,17 @@ const handlePrediction = async () => {
         />
       )}
 
+      {/* LOCATION STATUS */}
+
       <div className="location-status-line">
         <MapPin size={13} />
-        {locationStatus}
+        Monitoring Region: {myLocation}
       </div>
 
+      {/* NAVIGATION */}
+
       <nav className="feature-tabs">
+
         <button
           className={
             tab === "mine"
@@ -1048,10 +1364,9 @@ const handlePrediction = async () => {
           <MapPin size={21} />
 
           <span>
-            <b>Wilayah Saya</b>
-
+            <b>My Region</b>
             <small>
-              Pantau kondisi WBC di lokasi Anda
+              Monitor WBC conditions in your selected region
             </small>
           </span>
         </button>
@@ -1067,48 +1382,54 @@ const handlePrediction = async () => {
           <CalendarDays size={21} />
 
           <span>
-            <b>Prediksi WBC</b>
-
+            <b>WBC Prediction</b>
             <small>
-              Prediksi untuk wilayah dan tanggal pilihan
+              Regional and time-based prediction analysis
             </small>
           </span>
         </button>
+
       </nav>
+
+      {/* BACKEND STATUS */}
 
       {apiError && (
         <div
           className="panel"
           style={{
             margin: "12px 0",
-            padding: 14,
+            padding: 16,
             color: "#9a3412",
             background: "#fff7ed"
           }}
         >
-          <strong>Backend belum tersambung</strong>
+          <strong>
+            <AlertTriangle size={17} />
+            {" "}Backend Connection Error
+          </strong>
 
           <p>{apiError}</p>
 
           <small>
-            Jalankan backend melalui backend\run_api.bat
-            dan biarkan jendela server tetap terbuka.
+            Check the FastAPI server, Vercel configuration,
+            and /api endpoint connection.
           </small>
         </div>
       )}
 
       {apiReady && (
-        <div
-          className="data-status"
-          style={{
-            margin: "8px 0",
-            color: "#28734a",
-            fontSize: 12
-          }}
-        >
-          ● Data connected · NASA POWER{" "}
-          {apiWeather?.date || ""} · SiPerDitTan 2026 ·
-          38 regencies/cities
+        <div className="data-status">
+          <Database size={14} />
+          {" "}Backend Connected · {apiWbc.length} WBC records
+          {" "}· {apiMonthly.length} summary periods
+          {" "}· Latest Data: {latestRecordLabel}
+        </div>
+      )}
+
+      {apiLoading && (
+        <div className="panel" style={{ padding: 14 }}>
+          <RefreshCw size={16} />
+          {" "}Loading data from backend...
         </div>
       )}
 
@@ -1118,65 +1439,66 @@ const handlePrediction = async () => {
           style={{
             margin: "12px 0",
             padding: 14,
-            color: "#b42318",
-            background: "#fff1f0"
+            color: "#b42318"
           }}
         >
-          <strong>
-            Failed to load map coordinates
-          </strong>
-
+          <strong>Map Loading Error</strong>
           <p>{mapError}</p>
-
-          <small>
-            Make sure the JSON file is in the public folder.
-          </small>
         </div>
       )}
 
-      {tab === "mine" ? (
+      {/* ============================================== */}
+      {/* MY REGION DASHBOARD */}
+      {/* ============================================== */}
+
+      {tab === "mine" && (
+
         <main className="dashboard">
 
           <section className="welcome-banner">
             <div>
               <h1>
-                Hello, {myLocation} Farmer!
+                Welcome, {myLocation}!
               </h1>
 
               <p>
-                Here is the latest information on Brown Planthopper
-                 (BPH) activity in your region.
+                Monitor reported Brown Planthopper attacks
+                and weather conditions in your selected region.
               </p>
             </div>
           </section>
+
+          {/* WEATHER AND WBC METRICS */}
 
           <section className="metric-grid">
 
             <Metric
               icon={Thermometer}
-              label="Temperature"
+              label="Air Temperature"
               value={
-                apiWeather?.values?.T2M != null
-                  ? `${fmt(apiWeather.values.T2M)} °C`
-                  : "—"
+                weatherValues.T2M != null
+                  ? `${fmt(weatherValues.T2M)} °C`
+                  : weatherLoading
+                    ? "Loading..."
+                    : "—"
               }
               note={
                 apiWeather
                   ? `NASA POWER · ${apiWeather.date}`
-                  : "Awaiting NASA POWER data"
+                  : weatherError || "Weather data unavailable"
               }
               tone="red"
             />
 
             <Metric
               icon={Droplets}
-              label="Humidity"
+              label="Relative Humidity"
               value={
-                apiWeather?.values?.RH2M != null
-                  ? `${fmt(apiWeather.values.RH2M)} %`
+                weatherValues.RH2M != null
+                  ? `${fmt(weatherValues.RH2M)} %`
                   : "—"
               }
-              note="NASA POWER"
+              note="NASA POWER · RH2M"
               tone="blue"
             />
 
@@ -1184,192 +1506,249 @@ const handlePrediction = async () => {
               icon={CloudRain}
               label="Rainfall"
               value={
-                apiWeather?.values?.PRECTOTCORR != null
-                  ? `${fmt(apiWeather.values.PRECTOTCORR)} mm`
+                weatherValues.PRECTOTCORR != null
+                  ? `${fmt(weatherValues.PRECTOTCORR)} mm`
                   : "—"
               }
-              note="NASA POWER"
+              note="NASA POWER · PRECTOTCORR"
               tone="blue"
             />
 
             <Metric
               icon={Bug}
-              label="BPH Population Estimate"
+              label="Reported WBC Affected Area"
               value={
-                current.value === null
-                  ? "Not available"
-                  : `${current.value} individuals/m²`
+                current.value !== null
+                  ? `${fmt(current.value)} ha`
+                  : "Unavailable"
               }
               note={
-                current.value === null
-                  ? "Data unavailable"
-                  : "Observasi SiPerDitTan"
+                current.hasData
+                  ? "SiPerDitTan Observation"
+                  : "No record in the latest available period"
               }
               tone="orange"
             />
 
           </section>
 
+          {/* MAP AND HISTORICAL CHART */}
+
           <section className="mine-grid">
 
             <article className="panel map-panel">
 
               <div className="panel-heading">
+
                 <h2>
                   <Map size={18} />
-                  Peta Risiko WBC Jawa Timur
+                  East Java WBC Relative Impact Map
                 </h2>
 
                 <span className="subtle-tag">
-                  {mapRegions.length} wilayah
+                  {mapRegions.length} Regions
                 </span>
+
               </div>
 
-              <EastJavaMap
-                selected={myLocation}
-                onSelect={location => {
-                  setMyLocation(location);
-                  setToastVisible(true);
-                }}
-                mapRegions={mapRegions}
-                riskData={riskData}
-              />
+              {mapLoading ? (
+                <p>Loading regional map...</p>
+              ) : (
+                <EastJavaMap
+                  selected={myLocation}
+                  onSelect={handleMyLocationChange}
+                  mapRegions={mapRegions}
+                  riskData={riskData}
+                />
+              )}
 
               <div className="map-legend">
-                {Object.entries(riskColors)
-                  .filter(
-                    ([label]) =>
-                      label !== "No data"
-                  )
-                  .map(([label, color]) => (
-                    <span key={label}>
-                      <i
-                        style={{
-                          background: color
-                        }}
-                      />
-                      {label}
-                    </span>
-                  ))}
+
+                <span>
+                  <i style={{ background: RISK_COLORS.low }} />
+                  Low
+                </span>
+
+                <span>
+                  <i style={{ background: RISK_COLORS.moderate }} />
+                  Moderate
+                </span>
+
+                <span>
+                  <i style={{ background: RISK_COLORS.high }} />
+                  High
+                </span>
+
+                <span>
+                  <i style={{ background: RISK_COLORS.critical }} />
+                  Critical
+                </span>
+
+                <span>
+                  <i style={{ background: RISK_COLORS.nodata }} />
+                  No Data
+                </span>
+
               </div>
 
+              <small>
+                Risk levels represent relative comparisons
+                of reported affected areas across regions.
+                They are not validated biological outbreak thresholds.
+                No reported attack does not necessarily mean
+                the region is pest-free.
+              </small>
+
             </article>
+
+            {/* HISTORICAL CHART */}
 
             <article className="panel chart-panel">
 
               <div className="panel-heading">
                 <h2>
                   <TrendingUp size={18} />
-                  BPH Population Trend – {myLocation}
+                  Historical Affected Area – {myLocation}
                 </h2>
 
                 <span className="subtle-tag">
-                  Historical BPH Records
+                  Historical Data
                 </span>
               </div>
 
               <div className="chart-box">
 
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                >
-                  <AreaChart data={trendData}>
+                {mineTrend.length > 0 ? (
 
-                    <defs>
-                      <linearGradient
-                        id="mineFill"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor="#e84b4b"
-                          stopOpacity={0.26}
-                        />
+                  <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                  >
+                    <AreaChart data={mineTrend}>
 
-                        <stop
-                          offset="100%"
-                          stopColor="#e84b4b"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
+                      <defs>
+                        <linearGradient
+                          id="mineFill"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="#e84b4b"
+                            stopOpacity={0.28}
+                          />
 
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#e7eee8"
-                    />
+                          <stop
+                            offset="100%"
+                            stopColor="#e84b4b"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
 
-                    <XAxis
-                      dataKey="day"
-                      tick={{ fontSize: 11 }}
-                    />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#e7eee8"
+                      />
 
-                    <YAxis
-                      tick={{ fontSize: 11 }}
-                    />
+                      <XAxis
+                        dataKey="month"
+                        tick={{ fontSize: 10 }}
+                      />
 
-                    <Tooltip />
+                      <YAxis
+                        tick={{ fontSize: 11 }}
+                        unit=" ha"
+                      />
 
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#e24b4b"
-                      strokeWidth={3}
-                      fill="url(#mineFill)"
-                    />
+                      <Tooltip
+                        formatter={(value) => [
+                          `${fmt(value)} ha`,
+                          "Affected Area"
+                        ]}
+                      />
 
-                  </AreaChart>
-                </ResponsiveContainer>
+                      <Area
+                        type="monotone"
+                        dataKey="affected"
+                        name="Affected Area"
+                        stroke="#e24b4b"
+                        strokeWidth={3}
+                        fill="url(#mineFill)"
+                      />
+
+                    </AreaChart>
+                  </ResponsiveContainer>
+
+                ) : (
+                  <div className="chart-empty">
+                    No historical WBC records available
+                    for this region.
+                  </div>
+                )}
 
               </div>
 
             </article>
+
+            {/* REGIONAL RISK GAUGE */}
 
             <article className="panel risk-panel">
 
               <div className="panel-heading">
                 <h2>
                   <ShieldAlert size={18} />
-                  Tingkat Risiko
+                  Regional Risk Indicator
                 </h2>
               </div>
 
-<div className="risk-gauge">
-  <div className="gauge-arc" />
+              <div className="risk-gauge">
+                <div className="gauge-arc" />
 
-  <div
-    className="gauge-needle"
-    style={{
-      transform: `rotate(${needleAngle}deg)`,
-      backgroundColor: isSafe ? "#22a65a" : current.color
-    }}
-  />
-</div>
+                <div
+                  className="gauge-needle"
+                  style={{
+                    transform: `rotate(${needleAngle}deg)`,
+                    backgroundColor: current.color
+                  }}
+                />
+
+              </div>
 
               <strong
                 className="risk-word"
-                style={{
-                  color: current.color
-                }}
+                style={{ color: current.color }}
               >
                 {current.label}
               </strong>
 
               <p>
                 {!current.hasData
-                  ? "Regional data is not available."
-                  : localNotifications.length === 0
-                    ? "The region is currently safe. No BPH infestation was reported in the latest available data."
-                    : "An infestation has been reported. Conduct field monitoring and follow up based on local conditions."}
+                  ? "Regional WBC observations are unavailable for the latest period."
+                  : isSafe
+                    ? "No affected area was recorded in the latest available dataset."
+                    : `A reported affected area of ${fmt(current.value)} ha has been recorded.`}
               </p>
+
+              {current.hasData && (
+                <div className="summary-row">
+                  <span>Reported Crop Failure</span>
+                  <b>{fmt(current.puso)} ha</b>
+                </div>
+              )}
+
+              <small>
+                Indicator position represents relative
+                reported impact, not a validated outbreak probability.
+              </small>
 
             </article>
 
           </section>
+
+          {/* REGIONAL COMPARISON AND RECOMMENDATIONS */}
 
           <section className="bottom-grid">
 
@@ -1378,38 +1757,50 @@ const handlePrediction = async () => {
               <div className="panel-heading">
                 <h2>
                   <Activity size={18} />
-                  Wilayah dengan Risiko Tertinggi
+                  Regional Affected Area Comparison
                 </h2>
               </div>
 
               <div className="risk-bars">
 
                 {riskData
+                  .filter((item) => item.hasData)
                   .slice()
-                  .sort((a, b) => b.score - a.score)
-                  .map(region => (
+                  .sort(
+                    (a, b) =>
+                      Number(b.value) - Number(a.value)
+                  )
+                  .map((region) => (
                     <div
                       className="risk-bar-row"
                       key={region.name}
                     >
-                      <span>
-                        {region.name}
-                      </span>
+                      <span>{region.name}</span>
 
                       <div>
                         <i
                           style={{
-                            width: `${region.score * 100}%`,
+                            width: `${Math.max(
+                              0,
+                              Math.min(
+                                100,
+                                Number(region.score || 0) * 100
+                              )
+                            )}%`,
                             background: region.color
                           }}
                         />
                       </div>
 
                       <b>
-                        {region.score.toFixed(2)}
+                        {fmt(region.value)} ha
                       </b>
                     </div>
                   ))}
+
+                {riskData.filter((item) => item.hasData).length === 0 && (
+                  <p>No regional comparison data available.</p>
+                )}
 
               </div>
 
@@ -1423,255 +1814,352 @@ const handlePrediction = async () => {
                   Mitigation Recommendations
                 </h2>
               </div>
-                            {!current.hasData ? (
-                <p>
-                  <Info size={17} />
-                  Data wilayah belum tersedia untuk menyusun rekomendasi.
-                </p>
-              ) : localRecommendations.length === 0 ? (
-                <p>
-                  <CheckCircle2 size={17} />
-                  Wilayah aman. Tidak ada rekomendasi penanganan khusus saat ini.
-                </p>
-              ) : (
-                localRecommendations.map((text, index) => (
+
+              {localRecommendations.map(
+                (recommendation, index) => (
                   <p key={index}>
                     <CheckCircle2 size={17} />
-                    {text}
+                    {recommendation}
                   </p>
-                ))
+                )
               )}
 
             </article>
 
           </section>
 
+          {/* DATA SOURCES */}
+
+          <section className="panel" style={{ padding: 18 }}>
+
+            <div className="panel-heading">
+              <h2>
+                <Database size={18} />
+                Data Sources and Status
+              </h2>
+            </div>
+
+            <p>
+              <b>NASA POWER:</b> temperature, relative humidity,
+              and rainfall data, subject to dataset availability.
+            </p>
+
+            <p>
+              <b>SiPerDitTan:</b> reported WBC affected area
+              and crop failure records.
+            </p>
+
+            <p>
+              <b>Backend Status:</b>{" "}
+              {apiReady ? "Connected" : "Not Connected"}
+            </p>
+
+            <p>
+              <b>Weather Data Period:</b>{" "}
+              {apiHealth?.datasets?.nasa_power?.start || "—"}
+              {" – "}
+              {apiHealth?.datasets?.nasa_power?.end || "—"}
+            </p>
+
+            <p>
+              <b>Latest WBC Record:</b> {latestRecordLabel}
+            </p>
+
+          </section>
+
         </main>
-      ) : (
-        <>
-          <main className="dashboard">
+      )}
 
-            <section className="prediction-title">
+      {/* ============================================== */}
+      {/* WBC PREDICTION DASHBOARD */}
+      {/* ============================================== */}
 
-              <div>
-                <span className="eyebrow">
-                  REGION- AND TIME-BASED ANALYSIS
+      {tab === "prediction" && (
+
+        <main className="dashboard">
+
+          <section className="prediction-title">
+
+            <div>
+              <span className="eyebrow">
+                REGION AND TIME-BASED ANALYSIS
+              </span>
+
+              <h1>
+                WBC Population and Attack Forecast
+              </h1>
+
+              <p>
+                Analyze potential Brown Planthopper affected
+                areas based on the selected region and period.
+              </p>
+            </div>
+
+            <div className="title-icon">
+              <CalendarDays size={34} />
+            </div>
+
+          </section>
+
+          {/* PREDICTION FORM */}
+
+          <section className="prediction-controls panel">
+
+            <label>
+              <span>
+                <MapPin size={16} />
+                Select Region
+              </span>
+
+              <select
+                value={predictionLocation}
+                onChange={(event) =>
+                  handlePredictionLocationChange(
+                    event.target.value
+                  )
+                }
+              >
+                {locations.map((location) => (
+                  <option
+                    key={location}
+                    value={location}
+                  >
+                    {location}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>
+                <CalendarDays size={16} />
+                Start Date
+              </span>
+
+              <input
+                type="date"
+                value={startDate}
+                onChange={(event) => {
+                  setStartDate(event.target.value);
+                  setPredictionResult(null);
+                  setPredictionError("");
+                  setPredicted(false);
+                }}
+              />
+            </label>
+
+            <label>
+              <span>
+                <CalendarDays size={16} />
+                End Date
+              </span>
+
+              <input
+                type="date"
+                value={endDate}
+                min={startDate}
+                onChange={(event) => {
+                  setEndDate(event.target.value);
+                  setPredictionResult(null);
+                  setPredictionError("");
+                  setPredicted(false);
+                }}
+              />
+            </label>
+
+            <button
+              className="primary-button"
+              onClick={handlePrediction}
+              disabled={predictionLoading}
+            >
+              {predictionLoading ? (
+                <RefreshCw size={17} />
+              ) : (
+                <Activity size={17} />
+              )}
+
+              {predictionLoading
+                ? "Processing..."
+                : "Generate Prediction"}
+
+              <ChevronRight size={17} />
+            </button>
+
+          </section>
+
+          {/* PREDICTION ERROR */}
+
+          {predictionError && (
+            <div
+              className="panel"
+              style={{
+                padding: 16,
+                marginTop: 14,
+                color: "#b42318",
+                background: "#fff1f0"
+              }}
+            >
+              <AlertTriangle size={18} />
+              {" "}{predictionError}
+            </div>
+          )}
+
+          {/* MAP AND PREDICTION SUMMARY */}
+
+          <section className="prediction-map-row">
+
+            <article className="panel prediction-map-panel">
+
+              <div className="panel-heading">
+                <h2>
+                  <Map size={18} />
+                  Regional Prediction Map
+                </h2>
+
+                <span className="subtle-tag">
+                  38 Regions
+                </span>
+              </div>
+
+              <EastJavaMap
+                selected={predictionLocation}
+                onSelect={handlePredictionLocationChange}
+                mapRegions={mapRegions}
+                riskData={riskData}
+                large
+              />
+
+              <small>
+                This map displays the latest historical
+                observations, not future prediction results.
+              </small>
+
+            </article>
+
+            <article className="panel prediction-summary">
+
+              <div className="panel-heading">
+                <h2>
+                  <Activity size={18} />
+                  Prediction Summary
+                </h2>
+              </div>
+
+              <div className="summary-number">
+                <span>
+                  Total Predicted Affected Area
                 </span>
 
-                <h1>
-                  Population Forecast WBC
-                </h1>
-
-                <p>
-                  Explore population projections and risk levels for
-                  Wereng Batang Cokelat di 38 regencies/cities
-                  East Java.
-                </p>
+                <strong>
+                  {predicted
+                    ? `${fmt(predictionResult?.total_predicted_ha)} ha`
+                    : "—"}
+                </strong>
               </div>
 
-              <div className="title-icon">
-                <CalendarDays size={34} />
-              </div>
-
-            </section>
-
-            <section className="prediction-controls panel">
-
-              <label>
+              <div className="summary-row">
                 <span>
                   <MapPin size={16} />
-                  Pilih Wilayah
+                  Region
                 </span>
 
-                <select
-                  value={predictionLocation}
-                  onChange={event => {
-                    setPredictionLocation(event.target.value);
-                    setPredicted(false);
-                  }}
-                >
-                  {locations.map(location => (
-                    <option
-                      key={location}
-                      value={location}
-                    >
-                      {location}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <b>{predictionLocation}</b>
+              </div>
 
-              <label>
+              <div className="summary-row">
                 <span>
                   <CalendarDays size={16} />
-                  Tanggal Mulai
+                  Period
                 </span>
 
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={event => {
-                    setStartDate(event.target.value);
-                    setPredicted(false);
-                  }}
-                />
-              </label>
+                <b>
+                  {titleDate(startDate)}
+                  {" – "}
+                  {titleDate(endDate)}
+                </b>
+              </div>
 
-              <label>
+              <div className="summary-row">
                 <span>
-                  <CalendarDays size={16} />
-                  Tanggal Akhir
+                  <ShieldAlert size={16} />
+                  Potential Attack Periods
                 </span>
 
-                <input
-                  type="date"
-                  value={endDate}
-                  min={startDate}
-                  onChange={event => {
-                    setEndDate(event.target.value);
-                    setPredicted(false);
-                  }}
-                />
-              </label>
-
-              <button
-                className="primary-button"
-                onClick={handlePrediction}
-              >
-                <Activity size={17} />
-                Tampilkan Prediksi
-                <ChevronRight size={17} />
-              </button>
-
-            </section>
-
-            <section className="prediction-map-row">
-
-              <article className="panel prediction-map-panel">
-
-                <div className="panel-heading">
-                  <h2>
-                    <Map size={18} />
-                    Peta Prediksi Risiko WBC – Jawa Timur
-                  </h2>
-
-                  <span className="subtle-tag">
-                    {mapRegions.length} wilayah
-                  </span>
-                </div>
-
-                <EastJavaMap
-                  selected={predictionLocation}
-                  onSelect={location => {
-                    setPredictionLocation(location);
-                    setPredicted(false);
-                  }}
-                  mapRegions={mapRegions}
-                  riskData={riskData}
-                  large
-                />
-
-                <div className="map-legend">
-                  {Object.entries(riskColors)
-                    .filter(
-                      ([label]) =>
-                        label !== "No data"
-                    )
-                    .map(([label, color]) => (
-                      <span key={label}>
-                        <i
-                          style={{ background: color }}
-                        />
-                        {label}
-                      </span>
-                    ))}
-                </div>
-
-              </article>
-
-              <article className="panel prediction-summary">
-
-                <div className="panel-heading">
-                  <h2>
-                    <Activity size={18} />
-                    Hasil Prediksi – {predictionLocation}
-                  </h2>
-                </div>
-
-                <div className="summary-number">
-                  <span>
-                    Affected Area in the Latest Available Record
-                  </span>
-
-                  <strong>
-                    {prediction.value === null
-                      ? "Not available"
-                      : `${fmt(prediction.value)} ha`}
-                  </strong>
-                </div>
-
-                <div className="summary-row">
-                  <span>
-                    <CalendarDays size={16} />
-                    Periode
-                  </span>
-
-                  <b>
-                    {titleDate(startDate)} – {titleDate(endDate)}
-                  </b>
-                </div>
-
-                <div className="summary-row">
-                  <span>
-                    <ShieldAlert size={16} />
-                    Indikator risiko
-                  </span>
-
-                  <b style={{ color: prediction.color }}>
-                    {prediction.label}
-                  </b>
-                </div>
-
-                <div className="summary-note">
-                  <Info size={15} />
-
+                <b>
                   {predicted
-                    ? prediction.value === null
-                      ? "No historical records are available for this region."
-                      : "Regional analysis and BPH indicators for the selected period."
-                    : "Select a region and date range, then generate the forecast."}
-                </div>
+                    ? predictionSummary.potentialPeriods
+                    : "—"}
+                </b>
+              </div>
 
-              </article>
+              <div className="summary-row">
+                <span>Average Probability</span>
 
-            </section>
+                <b>
+                  {predicted
+                    ? `${fmt(
+                        predictionSummary.averageProbability * 100
+                      )}%`
+                    : "—"}
+                </b>
+              </div>
 
-            <section className="prediction-charts">
+              <div className="summary-row">
+                <span>Highest Probability</span>
 
-              <article className="panel">
+                <b>
+                  {predicted
+                    ? `${fmt(
+                        predictionSummary.highestProbability * 100
+                      )}%`
+                    : "—"}
+                </b>
+              </div>
 
-                <div className="panel-heading">
-                  <h2>
-                    <TrendingUp size={18} />
-                    Historical BPH Affected Area – {predictionLocation}
-                  </h2>
+              <div className="summary-note">
+                <Info size={15} />
 
-                  <span className="subtle-tag">
-                    Historical BPH Records
-                  </span>
-                </div>
+                {predicted
+                  ? "The results below are generated by the backend model. Interpret them according to the model's experimental status."
+                  : "Select a region and period, then click Generate Prediction."}
+              </div>
 
-                <div className="chart-box tall">
+            </article>
+
+          </section>
+
+          {/* PREDICTION CHARTS */}
+
+          <section className="prediction-charts">
+
+            {/* AFFECTED AREA FORECAST */}
+
+            <article className="panel">
+
+              <div className="panel-heading">
+                <h2>
+                  <TrendingUp size={18} />
+                  Projected WBC Affected Area
+                </h2>
+
+                <span className="subtle-tag">
+                  AI Model Output
+                </span>
+              </div>
+
+              <div className="chart-box tall">
+
+                {predicted && predictionItems.length > 0 ? (
 
                   <ResponsiveContainer
                     width="100%"
                     height="100%"
                   >
-                    <AreaChart data={trendData}>
+                    <AreaChart data={predictionItems}>
 
                       <defs>
                         <linearGradient
-                          id="predFill"
+                          id="predictionFill"
                           x1="0"
                           y1="0"
                           x2="0"
@@ -1680,7 +2168,7 @@ const handlePrediction = async () => {
                           <stop
                             offset="0%"
                             stopColor="#f28a24"
-                            stopOpacity={0.28}
+                            stopOpacity={0.3}
                           />
 
                           <stop
@@ -1697,188 +2185,301 @@ const handlePrediction = async () => {
                       />
 
                       <XAxis
-                        dataKey="day"
+                        dataKey="label"
                         tick={{ fontSize: 11 }}
                       />
 
                       <YAxis
+                        unit=" ha"
                         tick={{ fontSize: 11 }}
                       />
 
-                      <Tooltip />
+                      <Tooltip
+                        formatter={(value) => [
+                          `${fmt(value)} ha`,
+                          "Predicted Affected Area"
+                        ]}
+                      />
 
                       <Area
                         type="monotone"
-                        dataKey="value"
+                        dataKey="predicted_affected_ha"
+                        name="Predicted Affected Area"
                         stroke="#f28a24"
                         strokeWidth={3}
-                        fill="url(#predFill)"
+                        fill="url(#predictionFill)"
                       />
 
                     </AreaChart>
                   </ResponsiveContainer>
 
-                </div>
-
-              </article>
-
-              <article className="panel">
-
-                <div className="panel-heading">
-                  <h2>
-                    <Map size={18} />
-                    Perbandingan Antarwilayah
-                  </h2>
-                </div>
-
-                <div className="comparison-bars">
-
-                  {riskData
-                    .slice()
-                    .sort((a, b) => b.value - a.value)
-                    .map(region => (
-                      <div
-                        className="comparison-row"
-                        key={region.name}
-                      >
-                        <span>
-                          {region.name}
-                        </span>
-
-                        <div>
-                          <i
-                            style={{
-                              width: `${(region.value / 550) * 100}%`,
-                              background: region.color
-                            }}
-                          />
-                        </div>
-
-                        <b>
-                          {region.value}
-                        </b>
-                      </div>
-                    ))}
-
-                </div>
-
-              </article>
-
-              <article className="panel recommendation-panel">
-
-                <div className="panel-heading">
-                  <h2>
-                    <Leaf size={18} />
-                    Rekomendasi Antisipasi
-                  </h2>
-                </div>
-
-                {!prediction.hasData ? (
-                  <p>
-                    <Info size={17} />
-                    Data untuk wilayah ini belum tersedia.
-                  </p>
-                ) : Number(prediction.value || 0) === 0 &&
-                  Number(prediction.puso || 0) === 0 ? (
-                  <p>
-                    <CheckCircle2 size={17} />
-                    Kondisi wilayah aman berdasarkan data terbaru.
-                    Tidak diperlukan rekomendasi penanganan khusus.
-                  </p>
                 ) : (
-                  <>
-                    <p>
-                      <CheckCircle2 size={17} />
-                      Tingkatkan pemantauan populasi WBC di area terpilih.
-                    </p>
-
-                    <p>
-                      <CheckCircle2 size={17} />
-                      Catat stadia WBC dan keberadaan musuh alami.
-                    </p>
-
-                    <p>
-                      <CheckCircle2 size={17} />
-                      Lakukan pengendalian berdasarkan hasil pengamatan
-                      dan ambang kendali.
-                    </p>
-                  </>
+                  <div className="chart-empty">
+                    {predictionLoading
+                      ? "The model is processing the prediction..."
+                      : "The chart will appear after a successful prediction."}
+                  </div>
                 )}
 
-              </article>
+              </div>
 
-            </section>
+            </article>
 
-            {apiMetrics && (
-              <section
-                className="panel"
-                style={{
-                  marginTop: 18,
-                  padding: 18
-                }}
-              >
-                <div className="panel-heading">
-                  <h2>
-                    <Activity size={18} />
-                    Evaluasi Awal Model AI
-                  </h2>
+            {/* ATTACK PROBABILITY */}
 
-                  <span className="subtle-tag">
-                    Evaluasi model
-                  </span>
-                </div>
+            <article className="panel">
 
-                <p
-                  style={{
-                    color: "#64748b",
-                    fontSize: 13
-                  }}
-                >
-                  The following metrics are based on initial testing of the
-                  2026 dataset and do not yet represent
-                  multi-year temporal validation.
-                </p>
+              <div className="panel-heading">
+                <h2>
+                  <Activity size={18} />
+                  Potential Attack Probability
+                </h2>
+              </div>
 
-                {(apiMetrics.classification || []).map(
-                  (metric, index) => (
-                    <div
-                      key={`${metric.MODEL || metric.model || "model"}-${index}`}
-                      className="summary-row"
-                    >
-                      <span>
-                        {metric.MODEL ||
-                          metric.model ||
-                          "Classification Model"}
-                      </span>
+              <div className="chart-box tall">
 
-                      <b>
-                        F1: {fmt(metric.F1 ?? metric.f1, 3)}
-                        {" · "}
-                        PR-AUC: {fmt(
-                          metric.PR_AUC ?? metric.pr_auc,
-                          3
-                        )}
-                      </b>
-                    </div>
-                  )
+                {predicted && predictionItems.length > 0 ? (
+
+                  <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                  >
+                    <BarChart data={predictionItems}>
+
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#e7eee8"
+                      />
+
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 11 }}
+                      />
+
+                      <YAxis
+                        domain={[0, 1]}
+                        tickFormatter={(value) =>
+                          `${Math.round(value * 100)}%`
+                        }
+                      />
+
+                      <Tooltip
+                        formatter={(value) => [
+                          `${fmt(Number(value) * 100)}%`,
+                          "Probability"
+                        ]}
+                      />
+
+                      <Bar
+                        dataKey="probability"
+                        name="Probability"
+                        fill="#239a61"
+                        radius={[5, 5, 0, 0]}
+                      />
+
+                    </BarChart>
+                  </ResponsiveContainer>
+
+                ) : (
+                  <div className="chart-empty">
+                    No prediction probability data available.
+                  </div>
                 )}
 
-              </section>
+              </div>
+
+            </article>
+
+          </section>
+
+          {/* PREDICTION TABLE */}
+
+          <section
+            className="panel"
+            style={{ padding: 18 }}
+          >
+
+            <div className="panel-heading">
+              <h2>
+                <Database size={18} />
+                Detailed Prediction Results
+              </h2>
+            </div>
+
+            {predicted && predictionItems.length > 0 ? (
+
+              <div style={{ overflowX: "auto" }}>
+
+                <table className="prediction-table">
+
+                  <thead>
+                    <tr>
+                      <th>Period</th>
+                      <th>Probability</th>
+                      <th>Predicted Affected Area</th>
+                      <th>Model Status</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {predictionItems.map((item, index) => (
+                      <tr
+                        key={item.date || index}
+                      >
+
+                        <td>{item.date || "—"}</td>
+
+                        <td>
+                          {fmt(item.probability * 100)}%
+                        </td>
+
+                        <td>
+                          {fmt(item.predicted_affected_ha)} ha
+                        </td>
+
+                        <td>
+                          {item.risk || "Not specified"}
+                        </td>
+
+                      </tr>
+                    ))}
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            ) : (
+              <p>
+                Prediction results are not yet available.
+              </p>
             )}
 
-          </main>
-        </>
+          </section>
+
+          {/* MODEL EVALUATION */}
+
+          {apiMetrics && (
+            <section
+              className="panel"
+              style={{ padding: 18 }}
+            >
+
+              <div className="panel-heading">
+                <h2>
+                  <Activity size={18} />
+                  Initial AI Model Evaluation
+                </h2>
+
+                <span className="subtle-tag">
+                  Experimental
+                </span>
+              </div>
+
+              <p>
+                {apiMetrics.note ||
+                  "Model evaluation based on the currently available testing results."}
+              </p>
+
+              <h3>Classification</h3>
+
+              {(apiMetrics.classification || []).map(
+                (metric, index) => (
+                  <div
+                    key={`classification-${index}`}
+                    className="summary-row"
+                  >
+                    <span>
+                      {metric.MODEL ||
+                        metric.model ||
+                        "Classification Model"}
+                    </span>
+
+                    <b>
+                      F1: {fmt(metric.F1 ?? metric.f1, 3)}
+                      {" · "}
+                      PR-AUC: {fmt(
+                        metric.PR_AUC ?? metric.pr_auc,
+                        3
+                      )}
+                    </b>
+                  </div>
+                )
+              )}
+
+              <h3>Regression</h3>
+
+              {(apiMetrics.regression || []).map(
+                (metric, index) => (
+                  <div
+                    key={`regression-${index}`}
+                    className="summary-row"
+                  >
+                    <span>
+                      {metric.MODEL ||
+                        metric.model ||
+                        "Regression Model"}
+                    </span>
+
+                    <b>
+                      RMSE: {fmt(metric.RMSE ?? metric.rmse, 3)}
+                      {" · "}
+                      MAE: {fmt(metric.MAE ?? metric.mae, 3)}
+                    </b>
+                  </div>
+                )
+              )}
+
+            </section>
+          )}
+
+          {/* MODEL INTERPRETATION */}
+
+          <section
+            className="panel"
+            style={{ padding: 18 }}
+          >
+
+            <div className="panel-heading">
+              <h2>
+                <Info size={18} />
+                Prediction Interpretation
+              </h2>
+            </div>
+
+            <p>
+              The current prediction model is experimental.
+              Its outputs do not guarantee that an outbreak
+              will occur and should not be used as the sole
+              basis for field control decisions.
+            </p>
+
+            <p>
+              The currently identified backend model uses
+              Random Forest Classifier and Dummy Regressor.
+              Therefore, the predictive performance for
+              affected-area estimation should be evaluated
+              further before operational deployment.
+            </p>
+
+          </section>
+
+        </main>
       )}
 
+      {/* FOOTER */}
+
       <footer className="footer">
+
         <span>
           © 2026 PestCycle AI
         </span>
 
         <span>
-          Sistem Early Warning & Prediksi Wereng Batang
-          · East Java
+          Brown Planthopper Early Warning & Forecasting
+          · East Java, Indonesia
         </span>
+
       </footer>
 
     </div>

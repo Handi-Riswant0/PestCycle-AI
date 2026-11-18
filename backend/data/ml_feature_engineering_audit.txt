@@ -1,0 +1,55 @@
+======================================================================
+PESTCYCLE AI - FEATURE ENGINEERING AUDIT
+======================================================================
+
+Jumlah observasi sumber: 380
+Jumlah observasi ML: 342
+Jumlah wilayah: 38
+Jumlah fitur prediktor: 13
+
+PERIODE TARGET:
+2026 - 2026
+
+PEMBAGIAN DATA:
+TRAIN: 228 observasi
+TEST: 114 observasi
+
+TARGET:
+WBC_AFFECTED_HA: mean=4.3267, max=124.4000, zero=155
+WBC_PUSO_HA: mean=0.0376, max=3.1000, zero=323
+
+FITUR:
+REGION_KEY
+YEAR
+MONTH
+MONTH_SIN
+MONTH_COS
+T2M_MEAN_LAG1
+T2M_MAX_LAG1
+T2M_MIN_LAG1
+RH2M_MEAN_LAG1
+PRECTOTCORR_SUM_LAG1
+WEATHER_DAYS_LAG1
+WBC_AFFECTED_HA_LAG1
+WBC_PUSO_HA_LAG1
+
+VALIDASI:
+Duplikasi: 0
+Nilai kosong: 0
+
+CATATAN:
+- Cuaca bulan sebelumnya digunakan sebagai prediktor.
+- WBC bulan sebelumnya digunakan sebagai fitur historis.
+- Target adalah serangan WBC bulan berjalan.
+- Pembagian TRAIN dan TEST berdasarkan waktu.
+- DATA TEST tidak digunakan untuk pelatihan.
+- Hasil ini merupakan dataset eksperimental.
+- Belum dapat dianggap validasi lintas tahun.
+
+FILE OUTPUT:
+C:\PestCycleAI_Web_Integrated\data\wbc_next_month_ml_dataset_2026.csv
+C:\PestCycleAI_Web_Integrated\data\ml_feature_engineering_audit.txt
+
+======================================================================
+FEATURE ENGINEERING SELESAI
+======================================================================

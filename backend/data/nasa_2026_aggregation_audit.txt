@@ -1,0 +1,19 @@
+=================================================================
+AUDIT AGREGASI NASA POWER 2026
+=================================================================
+Jumlah wilayah: 38
+Jumlah hari: 304
+Jumlah baris: 11552
+Tanggal awal: 2026-01-01 00:00:00
+Tanggal akhir: 2026-10-31 00:00:00
+Jumlah variabel: 5
+
+PEMERIKSAAN DATA KOSONG:
+T2M: 0
+T2M_MAX: 0
+T2M_MIN: 0
+RH2M: 0
+PRECTOTCORR: 0
+
+STATUS: BERHASIL
+=================================================================

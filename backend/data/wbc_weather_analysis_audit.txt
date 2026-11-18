@@ -1,0 +1,27 @@
+======================================================================
+AUDIT ANALISIS CUACA DAN SERANGAN WBC
+======================================================================
+Jumlah observasi: 380
+Jumlah wilayah: 38
+Periode: 1-10
+
+METODE:
+Korelasi Spearman
+Analisis cuaca bulan yang sama
+Analisis time lag 1 bulan
+Analisis per kabupaten/kota
+
+CATATAN:
+Hasil korelasi tidak membuktikan hubungan sebab-akibat.
+Time lag menggunakan cuaca bulan sebelumnya.
+Data 2026 hanya Januari-Oktober.
+Analisis bersifat eksploratif.
+
+OUTPUT:
+C:\PestCycleAI_Web_Integrated\data\wbc_weather_correlation_2026.csv
+C:\PestCycleAI_Web_Integrated\data\wbc_weather_lag_analysis_2026.csv
+C:\PestCycleAI_Web_Integrated\data\wbc_weather_correlation_by_region.csv
+C:\PestCycleAI_Web_Integrated\data\wbc_weather_analysis_dataset_2026.csv
+
+ANALISIS SELESAI
+======================================================================

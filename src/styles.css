@@ -574,26 +574,38 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* GAMBAR WILAYAH */
-
-.map-region img {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: contain !important;
-  object-position: center !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  pointer-events: none !important;
+/* REGION SILHOUETTE MASK */
+.map-region > span[aria-hidden="true"] {
+  display: block;
+  pointer-events: none;
   user-select: none;
-  filter: var(--region-filter,none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  transition:
+    background-color 0.3s ease,
+    opacity 0.3s ease;
 }
 
 /* LABEL */
 
+/* REGION LABELS */
 .map-region-label {
-  display: none !important;
+  display: block !important;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  overflow: visible;
+  pointer-events: none;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 9px;
+  line-height: 17px;
+  font-weight: 700;
+  color: #244b36;
+  text-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.9),
+    0 0 3px rgba(255, 255, 255, 0.8);
 }
 
 .map-region:hover {
@@ -601,10 +613,22 @@ button {
   filter: drop-shadow(0 5px 7px rgba(18,64,39,.28));
 }
 
+/* SELECTED REGION HIGHLIGHT */
 .map-region.selected {
   z-index: 1000 !important;
-  border: 2px solid #078b4e !important;
-  background: rgba(7,139,78,.07) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  filter:
+    drop-shadow(0 0 2px #ffffff)
+    drop-shadow(0 0 5px #087747);
+}
+
+/* REGION HOVER */
+.map-region:hover {
+  z-index: 1001 !important;
+  filter:
+    drop-shadow(0 0 2px #ffffff)
+    drop-shadow(0 0 4px rgba(18, 100, 57, 0.65));
 }
 
 .map-region:focus-visible {
@@ -719,49 +743,92 @@ button {
   text-align: center;
 }
 
+
+/* REGIONAL RISK GAUGE */
+.risk-panel {
+  text-align: center;
+}
+
 .risk-gauge {
   position: relative;
   width: 150px;
   height: 80px;
   margin: 24px auto 7px;
   overflow: hidden;
+  isolation: isolate;
 }
 
+/* Colored risk scale */
 .gauge-arc {
   position: absolute;
   inset: 0;
+  z-index: 1;
   border-radius: 100px 100px 0 0;
+
   background: conic-gradient(
     from 270deg at 50% 100%,
-    #2eaa63 0deg 48deg,
-    #f2c532 48deg 96deg,
-    #f28a24 96deg 135deg,
-    #e63d3d 135deg 180deg,
+    #28a66a 0deg 45deg,
+    #e7bd35 45deg 90deg,
+    #ed8a32 90deg 135deg,
+    #df4545 135deg 180deg,
     transparent 180deg
   );
 }
 
+/* White inner area */
 .gauge-arc::after {
   content: "";
   position: absolute;
+  z-index: 1;
   left: 18px;
   right: 18px;
   bottom: -2px;
   height: 63px;
-  background: #fff;
+  background: #ffffff;
   border-radius: 100px 100px 0 0;
 }
 
+/* Indicator needle */
 .gauge-needle {
-  position: absolute;
+  position: absolute !important;
+  z-index: 5 !important;
+
   width: 4px;
   height: 57px;
+
   left: 73px;
   bottom: 0;
+
+  display: block;
   background: #254a35;
-  border-radius: 4px;
-  transform-origin: bottom;
-  transition: transform .3s ease;
+
+  border-radius: 5px;
+  transform-origin: 50% 100%;
+
+  transition:
+    transform 0.45s ease,
+    background-color 0.3s ease;
+
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+/* Needle pivot */
+.risk-gauge::after {
+  content: "";
+  position: absolute;
+  z-index: 6;
+
+  width: 11px;
+  height: 11px;
+
+  left: 50%;
+  bottom: -5px;
+
+  transform: translateX(-50%);
+
+  background: #254a35;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
 }
 
 .risk-word {
@@ -1418,3 +1485,82 @@ button {
 .auto-location-label{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:#eef7f0;color:#245c3b;font-weight:700;font-size:13px}
 .location-status-line{display:flex;align-items:center;gap:6px;margin:2px 0 8px;color:#668271;font-size:11px}
 @media(max-width:640px){.live-datetime{align-items:flex-start;flex-direction:column}.live-clock strong{font-size:20px}.auto-location-label{max-width:145px}.auto-location-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+
+/* =========================================
+   PESTCYCLE AI - REVISI KOMPONEN
+========================================= */
+
+.data-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #e8f6eb;
+  color: #176a3c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chart-empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  padding: 20px;
+  color: #718779;
+  text-align: center;
+  font-size: 13px;
+}
+
+.prediction-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 550px;
+  font-size: 13px;
+}
+
+.prediction-table th,
+.prediction-table td {
+  padding: 13px;
+  border-bottom: 1px solid #e5eee6;
+  text-align: left;
+}
+
+.prediction-table th {
+  background: #eaf6ec;
+  color: #124a31;
+  font-weight: 800;
+}
+
+.prediction-table tbody tr:hover {
+  background: #f5faf5;
+}
+
+.primary-button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.chart-box.tall {
+  min-height: 300px;
+}
+
+.map-selected-info small {
+  display: block;
+  margin-top: 5px;
+}
+
+.recommendation-panel p {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  line-height: 1.6;
+}
+
+.recommendation-panel p svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
